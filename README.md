@@ -1,4 +1,3 @@
-# IngegneriaSistemiSoftware2026
 # issLab2026
  Laboratorio di <b>Ingegneria dei Sistemi Software</b> a.a. 2025/2026 di Pellegrini Desirée 0001244480
 
