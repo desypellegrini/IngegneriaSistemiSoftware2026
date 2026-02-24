@@ -1,4 +1,4 @@
-# issLab2026
+# IngegneriaSistemiSoftware2026
  Laboratorio di <b>Ingegneria dei Sistemi Software</b> a.a. 2025/2026 di Pellegrini Desirée 0001244480
 
  [Testo di riferimento:](https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf)
