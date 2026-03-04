@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>conway26Java</title>
+</head>
+<body>
+    <h1>conway26Java</h1>
+    <ul>
+        <li>Sprint1 : <a href="conway26Java_v0.html">conway26Java_v0.html</a></li>
+        <li>Sprint2 : ... </li>
+    </ul>
+</body>
+</html>
