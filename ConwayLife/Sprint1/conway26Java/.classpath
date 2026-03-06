@@ -22,5 +22,6 @@
 			<attribute name="gradle_used_by_scope" value=""/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/iss26/IngegneriaSistemiSoftware2026/ConwayLife/unibolibs/json-simple-1.1.1.jar"/>
 	<classpathentry kind="output" path="bin/default"/>
 </classpath>

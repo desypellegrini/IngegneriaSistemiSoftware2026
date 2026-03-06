@@ -26,29 +26,299 @@ Realizzazione del  in Java del
 <h2>Requirements</h2>
 
  
-<!-- <div class="remark"> -->
-<pre>
-    Realizzare una versione in Java del gioco Life di Conway, come gioco zero-player. 
-    Il gioco consiste nell’introdurre una Griglia di Celle il cui stato (cella ‘viva’ o cella ‘morta’) 
-    evolve come stabilito dallle regole di ConwayLife
+<div class="remark">
+	<ol>
+		<li>
+			Realizzare una versione in Java del gioco Life di Conway, come gioco zero-player. Il gioco consiste nell’introdurre una Griglia di Celle il cui stato (cella ‘viva’ o cella ‘morta’) evolve come stabilito dallle regole di ConwayLife.
+		</li>
+		<li> L’utente umano deve poter:
+			<ul>
+				<li>specificare la configurazione iniziale della griglia del gioco</li>
+				<li>vedere l’evoluzione del gioco in forma opportuna (si veda <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.6.3'>Problema della vista del gioco)</a></li>
+				<li>fermare e far ripartire l’evoluzione del gioco</li>
+				<li>pulire (a gioco fermo) la configurazione della griglia del gioco</li>
+			</ul>
+		</li>
+	</ol>
 
-    L’utente umano deve poter:
-     - specificare la configurazione iniziale della griglia del gioco	
-     - vedere l’evoluzione del gioco in forma opportuna 
-        (si veda <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.6.3'>Problema della vista del gioco</a> )
-     - fermare e far ripartire l’evoluzione del gioco
-     - pulire (a gioco fermo) la configurazione della griglia del gioco
-
-</pre>
+</div>
  
 
  
 
 <h2>Requirement analysis</h2>
 
-<pre>
-    
+<div class="remark">
+    <ol>
+        <li>Per lo sviluppo ho adottato un approccio <b>Top-Down</b> basato scomposizione funzionale in tre entità logiche:
+        <ul>
+            <li><b>Cell</b>: entità atomica che rappresenta l'unità minima di stato (viva/morta).</li>
+            <li><b>Grid</b>: struttura dati che agisce come un aggregatore di celle, gestendo la topologia e fornendo i metodi per l'accesso spaziale e il calcolo delle adiacenze.</li>
+            <li><b>Life</b>: cuore algoritmico con le regole di transizione.</li>
+        </ul>
+        </li>
+        <li>Ho integrato un <b>LifeController</b> (pattern MVC) per orchestrare l'esecuzione e disaccoppiare la logica dall'interfaccia.
+        </li>
+        <li>Progettazione <b>Interface-Driven</b> per definire il "cosa" prima del "come", facilitando estensibilità e Unit Testing indipendente.
+        </li>
+    </ol>
+<img src="./img/diagrammaUML.png" alt="diagrammaUML" width="50%">
+</div>
+
+<div class="remark">
+    Per Cell, dopo aver parlato con il committente, formalizzo il seguente modello:<br>
+    <b>ICell</b>: <pre><code>
+package main.java.conway.domain;
+
+public interface ICell {
+	boolean isAlive();               //ha la capacità di rispondere ad una sorta di query con il proprio stato (viva o morta)
+	void setStatus(boolean status);  //ha la capacità di modificare il proprio stato interno secondo un valore booleano 
+	void switchCellState();          //ha la capacità di passare da viva a morta e viceversa 
+}
+</code>
 </pre>
+
+<b>Test plan per Cell</b>: <pre><code>
+package main.java.test;
+
+public class CellTest {
+	private ICell c;
+	
+	@Before
+	public void setup() {
+		System.out.println("ConwayLifeTest | setup");	
+		c = new Cell();
+	}
+
+	@After
+	public void down() {
+		System.out.println("ConwayLifeTest | down");
+	}
+	
+	@Test 
+	public void testCellAlive() {
+		System.out.println("ConwayLifeTest | doing alive");
+		c.setStatus(true);
+		boolean r = c.isAlive();
+		assertTrue(r);
+	}
+	
+	@Test 
+	public void testCellDead() {
+		System.out.println("ConwayLifeTest | doing dead");
+		c.setStatus(false);
+		boolean r = c.isAlive();
+		assertTrue(!r);
+	}
+}
+</code>
+</pre>
+</div>
+
+<div class="remark">
+    Il committente ha un'idea di Grid composta da Cell. La Grid è un'entità a due dimensioni, con righe e colonne.<br>
+    <b>IGrid</b>: <pre><code>
+package main.java.conway.domain;
+
+public interface IGrid {
+    // ha la capacità di restituire le proprie dimensioni
+	public int getRows();   //(primitiva)
+    public int getCols();   //(primitiva)
+    public void setCellState(int row, int col, boolean state);
+    // ha la capacità di restituire una sua componente
+    public ICell getCell(int row, int col);   //(primitiva)
+    public boolean getCellValue(int row, int col);
+    // ha la capacità di resettare lo stato di tutti i componenti (celle)
+    public void reset();   //(non primitiva)
+}
+</code>
+</pre>
+<b>Test plan per Grid</b>: <br>
+Sviluppo un test plan per definire il comportamento atteso della griglia. 
+<ol>
+    <li>mi assicuro che i metodi get restituiscano un numero naturale</li>
+    <li>nella reset controllo che tutte le celle siano morte</li>
+</ol>
+<pre><code>
+package main.java.test;
+
+public class GridTest {
+	private Grid grid;
+	private final int nRows = 5;
+	private final int nCols = 5;
+	
+	@Before
+	public void setup() {
+		System.out.println("GridTest | setup");	
+		grid = new Grid(nRows,nCols);
+	}
+	
+	@After
+	public void down() {
+		System.out.println("GridTest | down");
+	}
+	
+	@Test
+    public void testDims() {
+        System.out.println("testDims ---------------------" );
+        int nr = grid.getRows();
+        int nc = grid.getCols();
+        // Verifica che sono i numeri attesi
+        assertTrue(nr == nRows && nc == nCols);
+        // Verifica che devono essere > 0
+        assertTrue(nr > 0 && nc > 0);
+    }
+	
+	@Test
+	public void testCGridCellValue() {
+		System.out.println("testCGridCellValue ---------------------" );
+		grid.setCellState(0,0,true);
+		assertTrue(grid.getCellValue(0,0));
+		assertFalse(grid.getCellValue(0,1));
+	}
+
+    @Test
+    public void testReset() {
+        System.out.println("testReset ---------------------" );
+        // imposto alcune celle a true
+        grid.setCellState(0, 0, true);
+        grid.setCellState(2, 2, true);
+        
+        // chiamo il metodo reset
+        grid.reset();
+        
+        // verifico effettivamente che tutte siano morte
+        for (int i = 0; i < grid.getRows(); i++) {
+            for (int j = 0; j < grid.getCols(); j++) {
+                assertFalse("La cella " + i + "," + j + " dovrebbe essere morta", 
+                            grid.getCellValue(i, j));
+            }
+        }
+    }
+
+	@Test
+	public void testGridRep() {
+		assertTrue(grid.toString().trim().startsWith(". . . . ."));
+	}
+	@Test
+	public void testPrintGrid() {
+		System.out.println("testPrintGrid ---------------------" );
+		grid.setCellState(0,0,true);
+		grid.setCellState(0,1,true);
+		grid.setCellState(0,2,true);
+		grid.setCellState(0,3,true);
+		grid.setCellState(0,4,true);
+		//grid.printGrid();
+	}
+}
+</code>
+</pre>
+</div>
+
+<div class="remark">
+    Il committente non sa cosa sia Life, ma mi dice che è la logica del gioco e contiene le regole del gioco. Strutturalmente, Life è composta da una griglia.<br>
+    <b>LifeInterface</b>: <pre><code>
+package main.java.conway.domain;
+
+public interface LifeInterface {
+	/** Calcola l'evoluzione dello stato alla generazione successiva */
+    void nextGeneration();
+
+    /** Restituisce lo stato di una cella specifica */
+    boolean isAlive(int row, int col);  //(non primitiva)
+
+    /** Imposta lo stato di una cella */
+    void setCell(int row, int col, boolean alive);  //(non primitiva)
+
+    /** Restituisce il numero di righe e colonne */
+    //int getRows();
+    //int getCols();
+    
+    /** Restituisce la Cella */
+    ICell getCell(int row, int col);
+    
+    /** Restituisce la grid */
+    IGrid getGrid();
+    
+    /** pulisce */
+    void resetGrids();
+    
+    /** Restituisce una rappresentazione grafica testuale della grglia*/
+    //public String gridRep( );
+}
+</code>
+</pre>
+<b>Test plan per Life</b>: <br>
+Sviluppo un test plan per definire il comportamento atteso di Life. 
+<ol>
+    <li>imposto una configurazione conosciuta e controllo che segua le regole</li>
+    <li>nella reset imposto una cella, chiamo nextGeneration e controllo che sia morta</li>
+</ol>
+<pre><code>
+package main.java.test; 
+
+public class LifeTest {
+private LifeInterface lifeModel;
+private final int nRows = 5;
+private final int nCols = 5;
+
+	@Before
+	public void setup() {
+		System.out.println("GridTest | setup");	
+		lifeModel = Life.CreateLife(nRows, nCols);
+	}
+	@After
+	public void down() {
+		System.out.println("GridTest | down");
+	}
+	
+	/**
+     * Verifica che una linea orizzontale di 3 celle diventi verticale
+     */
+	@Test
+    public void testBlinkerEvolution() {
+        System.out.println("LifeTest | testBlinkerEvolution");
+        // Imposto configurazione orizzontale conosciuta
+        lifeModel.setCell(2, 1, true);
+        lifeModel.setCell(2, 2, true);
+        lifeModel.setCell(2, 3, true);
+
+        lifeModel.nextGeneration();
+
+        // Controllo che segua le regole (diventa verticale)
+        assertTrue("Cella centrale deve restare viva", lifeModel.isAlive(2, 2));
+        assertTrue("Cella sopra deve nascere", lifeModel.isAlive(1, 2));
+        assertTrue("Cella sotto deve nascere", lifeModel.isAlive(3, 2));
+        assertFalse("Cella sinistra deve morire", lifeModel.isAlive(2, 1));
+        assertFalse("Cella destra deve morire", lifeModel.isAlive(2, 3));
+    }
+	
+	/**
+     * Reset e pulizia
+     */
+	@Test
+    public void testResetBehavior() {
+        System.out.println("LifeTest | testResetBehavior");
+        // Imposto una cella viva
+        lifeModel.setCell(1, 1, true);
+        assertTrue(lifeModel.isAlive(1, 1));
+
+        // Eseguo il reset
+        lifeModel.resetGrids();
+
+        // Verifico che sia morta
+        assertFalse("Dopo il reset la cella deve essere morta", lifeModel.isAlive(1, 1));
+        
+        // Controllo aggiuntivo: dopo nextGeneration su griglia vuota, resta vuota
+        lifeModel.nextGeneration();
+        assertFalse("Dopo nextGeneration su griglia vuota, non deve nascere nulla", lifeModel.isAlive(1, 1));
+    }
+
+}
+</code>
+</pre>
+
+</div>
  
 
 <h2>Problem analysis</h2>

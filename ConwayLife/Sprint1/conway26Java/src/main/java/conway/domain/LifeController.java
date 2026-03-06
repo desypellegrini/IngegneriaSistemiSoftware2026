@@ -12,7 +12,8 @@ public class LifeController implements GameController{
     public LifeController( LifeInterface game, IOutDev outdev ){  
         this.life = game;       
         this.outdev = outdev;
-        CommUtils.outyellow("LifeController CREATED outdev="+outdev   );
+        //CommUtils.outyellow("LifeController CREATED outdev="+outdev   );
+        System.out.println("LifeController CREATED");
         if( outdev != null ) 
         	outdev.displayGrid( life.getGrid() );
      }

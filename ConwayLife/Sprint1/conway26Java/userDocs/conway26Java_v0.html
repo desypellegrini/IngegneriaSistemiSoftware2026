@@ -26,29 +26,44 @@ Realizzazione del  in Java del
 <h2>Requirements</h2>
 
  
-<!-- <div class="remark"> -->
-<pre>
-    Realizzare una versione in Java del gioco Life di Conway, come gioco zero-player. 
-    Il gioco consiste nell’introdurre una Griglia di Celle il cui stato (cella ‘viva’ o cella ‘morta’) 
-    evolve come stabilito dallle regole di ConwayLife
+<div class="remark">
+	<ol>
+		<li>
+			Realizzare una versione in Java del gioco Life di Conway, come gioco zero-player. Il gioco consiste nell’introdurre una Griglia di Celle il cui stato (cella ‘viva’ o cella ‘morta’) evolve come stabilito dallle regole di ConwayLife.
+		</li>
+		<li> L’utente umano deve poter:
+			<ul>
+				<li>specificare la configurazione iniziale della griglia del gioco</li>
+				<li>vedere l’evoluzione del gioco in forma opportuna (si veda Problema della vista del gioco)</li>
+				<li>fermare e far ripartire l’evoluzione del gioco</li>
+				<li>pulire (a gioco fermo) la configurazione della griglia del gioco</li>
+			</ul>
+		</li>
+	</ol>
 
-    L’utente umano deve poter:
-     - specificare la configurazione iniziale della griglia del gioco	
-     - vedere l’evoluzione del gioco in forma opportuna 
-        (si veda <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.6.3'>Problema della vista del gioco</a> )
-     - fermare e far ripartire l’evoluzione del gioco
-     - pulire (a gioco fermo) la configurazione della griglia del gioco
-
-</pre>
+</div>
  
 
  
 
 <h2>Requirement analysis</h2>
 
-<pre>
-    
-</pre>
+<div class="remark">
+	<p>
+		Per cell, dopo aver parlato con il committente, formalizzo il seguente modello:
+	</p>
+	<pre>
+		<code>
+			package main.java.conway.domain;
+
+			public interface ICell {
+				boolean isAlive(); //la cella ha la capacità di rispondere a una sorta di query che dice se è viva o morta
+				void setStatus(boolean status); //la cella ha la capacità di modificare il proprio stato interno secondo un valore booleano che può essere true o false
+				void switchCellState(); //la cella ha la capacità di cambiare stato (se è viva diventa morta, se è morta diventa viva)
+			}
+		</code>
+	</pre>
+</div>
  
 
 <h2>Problem analysis</h2>

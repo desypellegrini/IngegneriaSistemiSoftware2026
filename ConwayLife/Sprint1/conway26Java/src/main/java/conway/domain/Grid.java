@@ -29,12 +29,12 @@ public class Grid implements IGrid{
 
 	@Override
 	public int getRows() {
-		return rows;
+		return this.rows;
 	}
 
 	@Override
 	public int getCols() {
-		return cols;
+		return this.cols;
 	}
 
 	@Override

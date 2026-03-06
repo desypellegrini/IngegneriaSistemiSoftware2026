@@ -27,25 +27,46 @@ public class GridTest {
 	}
 	
 	@Test
-	public void testDims() {
-		System.out.println("testDims ---------------------" );
-		int nr = grid.getRows();
-		int nc = grid.getCols();
-		assertTrue( nr==nRows && nc==nCols );
-	}
+    public void testDims() {
+        System.out.println("testDims ---------------------" );
+        int nr = grid.getRows();
+        int nc = grid.getCols();
+        // Verifica che sono i numeri attesi
+        assertTrue(nr == nRows && nc == nCols);
+        // Verifica che devono essere > 0
+        assertTrue(nr > 0 && nc > 0);
+    }
 	
 	@Test
 	public void testCGridCellValue() {
 		System.out.println("testCGridCellValue ---------------------" );
 		grid.setCellState(0,0,true);
-		assertTrue(   grid.getCellValue(0,0) );
-		assertFalse(  grid.getCellValue(0,1) );
+		assertTrue(grid.getCellValue(0,0));
+		assertFalse(grid.getCellValue(0,1));
 	}
+	
+	@Test
+    public void testReset() {
+        System.out.println("testReset ---------------------" );
+        // imposto alcune celle a true
+        grid.setCellState(0, 0, true);
+        grid.setCellState(2, 2, true);
+        
+        // chiamo il metodo reset
+        grid.reset();
+        
+        // verifico effettivamente che tutte siano morte
+        for (int i = 0; i < grid.getRows(); i++) {
+            for (int j = 0; j < grid.getCols(); j++) {
+                assertFalse("La cella " + i + "," + j + " dovrebbe essere morta", 
+                            grid.getCellValue(i, j));
+            }
+        }
+    }
+	
 	@Test
 	public void testGridRep() {
-		System.out.println("testGridRep ---------------------" );
- 		System.out.println(""+grid);
-		assertTrue( grid.toString().startsWith(". . . . ."));
+		assertTrue(grid.toString().trim().startsWith(". . . . ."));
 	}
 	@Test
 	public void testPrintGrid() {

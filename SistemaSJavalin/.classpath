@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17/">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
+	<classpathentry kind="lib" path="C:/iss26/IngegneriaSistemiSoftware2026/ConwayLife/unibolibs/2p301.jar"/>
+	<classpathentry kind="lib" path="C:/iss26/IngegneriaSistemiSoftware2026/ConwayLife/unibolibs/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="C:/iss26/IngegneriaSistemiSoftware2026/ConwayLife/unibolibs/unibo.basicomm23-1.0.jar"/>
+	<classpathentry kind="lib" path="C:/iss26/IngegneriaSistemiSoftware2026/ConwayLife/unibolibs/uniboInterfaces.jar"/>
+	<classpathentry kind="output" path="bin/default"/>
+</classpath>

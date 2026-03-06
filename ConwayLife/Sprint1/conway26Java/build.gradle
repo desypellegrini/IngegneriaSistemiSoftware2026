@@ -22,6 +22,7 @@ dependencies {
     implementation name: 'uniboInterfaces'
     implementation name: '2p301'
     implementation name: 'unibo.basicomm23-1.0'
+    implementation name: 'json-simple-1.1.1'
 
 }
 
@@ -46,17 +47,34 @@ application {
     mainClassName    = 'main.java.conway.MainConwayLifeJava'
 }
 
-jar {
+/*jar {
     println("building jar")
     from sourceSets.main.allSource
     from('./') {
       include '*.pl'
       include '*.json'
     }
+    
     manifest {
         attributes 'Main-Class': "$mainClassName"
     }
 }
+*/
+
+jar {
+    println("building fat jar")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    // Include tutte le dipendenze nel file JAR
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    manifest {
+        attributes 'Main-Class': 'main.java.conway.MainConwayLifeJava'
+    }
+}
+
  
 task dovesiamo {
     println("projectDir= $projectDir")
