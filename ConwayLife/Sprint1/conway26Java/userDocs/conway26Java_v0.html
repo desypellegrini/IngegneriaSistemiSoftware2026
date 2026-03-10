@@ -48,22 +48,6 @@ Realizzazione del  in Java del
 
 <h2>Requirement analysis</h2>
 
-<div class="remark">
-	<p>
-		Per cell, dopo aver parlato con il committente, formalizzo il seguente modello:
-	</p>
-	<pre>
-		<code>
-			package main.java.conway.domain;
-
-			public interface ICell {
-				boolean isAlive(); //la cella ha la capacità di rispondere a una sorta di query che dice se è viva o morta
-				void setStatus(boolean status); //la cella ha la capacità di modificare il proprio stato interno secondo un valore booleano che può essere true o false
-				void switchCellState(); //la cella ha la capacità di cambiare stato (se è viva diventa morta, se è morta diventa viva)
-			}
-		</code>
-	</pre>
-</div>
  
 
 <h2>Problem analysis</h2>

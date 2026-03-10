@@ -49,23 +49,6 @@ Realizzazione del  in Java del
 <h2>Requirement analysis</h2>
 
 <div class="remark">
-    <ol>
-        <li>Per lo sviluppo ho adottato un approccio <b>Top-Down</b> basato scomposizione funzionale in tre entità logiche:
-        <ul>
-            <li><b>Cell</b>: entità atomica che rappresenta l'unità minima di stato (viva/morta).</li>
-            <li><b>Grid</b>: struttura dati che agisce come un aggregatore di celle, gestendo la topologia e fornendo i metodi per l'accesso spaziale e il calcolo delle adiacenze.</li>
-            <li><b>Life</b>: cuore algoritmico con le regole di transizione.</li>
-        </ul>
-        </li>
-        <li>Ho integrato un <b>LifeController</b> (pattern MVC) per orchestrare l'esecuzione e disaccoppiare la logica dall'interfaccia.
-        </li>
-        <li>Progettazione <b>Interface-Driven</b> per definire il "cosa" prima del "come", facilitando estensibilità e Unit Testing indipendente.
-        </li>
-    </ol>
-<img src="./img/diagrammaUML.png" alt="diagrammaUML" width="50%">
-</div>
-
-<div class="remark">
     Per Cell, dopo aver parlato con il committente, formalizzo il seguente modello:<br>
     <b>ICell</b>: <pre><code>
 package main.java.conway.domain;

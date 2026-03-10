@@ -14,7 +14,7 @@ java {
 repositories {
     mavenCentral()
     flatDir {   dirs './libs'    }
-    flatDir {   dirs '../../../unibolibs'    }
+    flatDir {   dirs '../../unibolibs'    }
 }
 
 dependencies {
