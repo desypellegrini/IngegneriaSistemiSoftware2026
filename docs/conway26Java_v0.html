@@ -301,6 +301,108 @@ private final int nCols = 5;
 </code>
 </pre>
 
+Definisco inoltre il LifeController, al cui interno ha un thread (play), che dà vita ai vari elementi trasferendo loro il controllo. LifeController definisce le interfacce per permettere a qualsiasi dispositivo di visualizzare la griglia. Si tratta di un componente proattivo (quando attivato, il thread play chiama ripetutamente nextGeneration) e reattivo (se c’è un input device che dice start/stop, lui parte/si ferma).
+<pre><code>
+package main.java.conway.domain;
+
+public class LifeController implements GameController{
+	private int generationTime = 500;
+    private  LifeInterface life;
+    private  IOutDev outdev; 
+ 	protected boolean running = false;
+    protected int epoch = 0;
+    
+    public LifeController( LifeInterface game, IOutDev outdev ){  
+        this.life = game;       
+        this.outdev = outdev;
+        System.out.println("LifeController CREATED");
+        if( outdev != null ) 
+        	outdev.displayGrid( life.getGrid() );
+     }
+
+	@Override
+	public int getGenTime() {
+		return generationTime;
+	}
+
+	@Override
+	public void switchCellState(int x, int y) {
+		ICell c = life.getCell(x, y); 
+		c.switchCellState( );   
+		if( outdev != null ) 
+			outdev.displayGrid(life.getGrid());
+	}
+	
+	protected void startTheGame() {
+		if( running ) return;   //start sent while running
+		running = true;
+		epoch = 0;
+		play();		
+	}
+	
+	protected void stopTheGame() {
+		running = false;		
+	}
+
+	protected void clearTheGame() {
+		if( outdev != null ) 
+			outdev.display("lfctrl: clearing");
+ 		stopTheGame();
+ 		CommUtils.delay(500);   //prima fermo e poi ...
+		epoch = 0;
+		resetAndDisplayGrids();   
+	}
+	
+	protected void printout( String s ) {
+		if( outdev != null ) 
+			outdev.display(s);
+	}
+	
+	 protected void play() {  
+			new Thread() {
+			public void run() {			
+				printout("gamestarted " + life.getGrid()) ; 
+				while( running ) {
+						CommUtils.delay(generationTime);
+						life.nextGeneration();
+						if( outdev != null ) outdev.displayGrid( life.getGrid()  );
+
+						CommUtils.outblue("---------Epoch ---- "+epoch++ );
+				}
+				printout("gamestopped"); 
+			}
+			}.start();
+ }
+	 
+	protected void resetAndDisplayGrids() {
+			life.resetGrids();
+			if(outdev != null) 
+				outdev.displayGrid( life.getGrid() );
+	}
+
+	@Override
+	public void onStart() {
+		startTheGame();
+	}
+
+	@Override
+	public void onStop() {
+		stopTheGame();	
+	}
+
+	@Override
+	public void onClear() {
+		clearTheGame();			
+	}
+
+	@Override
+	public int numEpoch() {
+		return epoch;
+	}
+
+}
+</code></pre>
+
 </div>
  
 
