@@ -12,7 +12,7 @@
  ### Sistema ConwayLife in locale
  [Riferimento: conway26Java Dai requisiti al deployment](https://anatali.github.io/issLab2026/Project%20conway26Java.html#conway26java-dai-requisiti-al-deployment)
  * [ConwayLife Sprint1](ConwayLife/Sprint1/conway26Java): impostazione di un primo prototipo
-   in Java con dispositivi Mock di I/O. <i>Distribuzione</i>: file jar. <i>Documentazione</i>:[conway26Java_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26Java_v0.html)
+   in Java con dispositivi Mock di I/O. <i>Distribuzione</i>: file jar. <i>Documentazione</i>: [conway26Java_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26Java_v0.html)
  * [ConwayLife Sprint2](ConwayLife/Sprint2/conway26JavaSwing): <b>evoluzione</b> del primo prototipo
    con un dispositivo di output realizzato in Swing. <i>Distribuzione</i>: file jar
  ### Sistemi come servizi
