@@ -13,8 +13,8 @@ java {
 
 repositories {
     mavenCentral()
-    //flatDir {   dirs './libs'    }
-    flatDir {   dirs '../unibolibs'    } 
+    flatDir {   dirs './libs'    }
+    flatDir {   dirs '../../../unibolibs'    } 
 }
 
 dependencies {
