@@ -8,13 +8,18 @@ import java.util.concurrent.CompletableFuture;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.websocket.WsMessageContext;
+import main.java.conway.domain.GameController;
+import main.java.conway.domain.IGrid;
+import main.java.conway.domain.IOutDev;
 import unibo.basicomm23.utils.CommUtils;
 import unibo.basicomm23.interfaces.IApplMessage;
 import unibo.basicomm23.msg.ApplMessage;
 
-public class IoJavalin {
+public class IoJavalin implements IOutDev{
 	
 	private WsMessageContext pageCtx ;
+	private GameController cc;
+	
 	public IoJavalin() {
         var app = Javalin.create(config -> {
 			config.staticFiles.add(staticFiles -> {
@@ -117,12 +122,32 @@ public class IoJavalin {
                 try {
                 	IApplMessage m = new ApplMessage(message);
                     CommUtils.outblue("IoJavalin |  eval:" + m.msgContent() );
+                    
+                    // ricevo un messaggio dal client: in base al contenuto discrimino il comportamento
                     if( m.msgContent().equals("ready")) { 
                     	pageCtx = ctx;  //memorizzo connession pagina
-                    }else if( m.msgContent().contains("cell(")) { 
-                    	//Funziona se arriva da CallerServerWs es. cell(5,6,1)
-                    	pageCtx.send( m.msgContent()); 
-                    	//TODO: inviare a LifeController
+                    }
+                    else if (m.msgContent().equals("start")){
+                    	// Il client ha premuto il pulsante START, allora faccio si che il GameController esegua onStart()
+                    	cc.onStart();
+                    }
+                    else if (m.msgContent().equals("stop")) {
+                    	// Il client ha premuto il pulsante STOP, allora faccio si che il GameController esegua onStop()
+                    	cc.onStop();
+                    }
+                    else if (m.msgContent().equals("clear")) {
+                    	// Il client ha premuto il pulsante CLEAR, allora faccio si che il GameController esegua onClear()
+                    	cc.onClear();
+                    }
+                    else if (m.msgContent().equals("exit")){
+                    	// Il client ha premuto il pulsante EXIT, allora eseguo close() del IOutDev
+                    	CommUtils.outred("IoJavalin | Ricevuto comando EXIT. Chiusura in corso...");
+                        cc.onStop(); // Ferma il gioco
+                    	this.close();
+                    }
+                    else if( m.msgContent().contains("cell(")) { 
+                    	// Il client ha premuto una cella, vado ad estrarre quale dal messaggio
+                    	decodeAndForwardCell(m.msgContent());
                     }else ctx.send(m.msgContent());
                 }catch(Exception e) {
                 	CommUtils.outred("IoJavalin |  error:" + e.getMessage());
@@ -131,14 +156,77 @@ public class IoJavalin {
         });        
 	}
 	
- 
-	
-
 	
 	public static void main(String[] args) {
 		var resource = IoJavalin.class.getResource("/pages");
 		CommUtils.outgreen("DEBUG: La cartella /page si trova in: " + resource);
 		new IoJavalin();
+	}
+
+	// funzione per iniettare il GameController in IoJavalin
+	public void setController(GameController cc) {
+		this.cc = cc;
+	}
+	
+	// funzione di appoggio per estrarre riga e colonna della cella e andare a cambiarle stato
+	private void decodeAndForwardCell(String content) {
+	    try {
+	        String data = content.replace("cell(", "").replace(")", "");
+	        
+	        String[] parts = data.split(",");
+	        
+	        if (parts.length >= 2) {
+	            int x = Integer.parseInt(parts[0].trim());
+	            int y = Integer.parseInt(parts[1].trim());
+
+	            CommUtils.outblue("IoJavalin | Comando cella decodificato: x=" + x + ", y=" + y);
+	            
+	         // questo metodo si occupa di comunicarlo al cliente, invocando displayCell()
+	            cc.switchCellState(x, y); 
+	        }
+	    } catch (NumberFormatException e) {
+	        CommUtils.outred("IoJavalin | Errore nel formato della cella: " + content);
+	    }
+	}
+
+
+	@Override
+	public void display(String msg) {
+		if (pageCtx != null && pageCtx.session.isOpen()) {
+	        pageCtx.send(msg);
+	    }
+		
+	}
+
+
+
+	@Override
+	public void displayCell(IGrid grid, int x, int y) {
+		if (pageCtx != null && pageCtx.session.isOpen()) {
+	        int state = grid.getCellValue(x, y) ? 1 : 0; 
+	        pageCtx.send("cell(" + x + "," + y + "," + state + ")");
+	    }
+		
+	}
+
+
+
+	@Override
+	public void close() {
+        if (pageCtx != null && pageCtx.session.isOpen()) {
+            pageCtx.session.close();
+        }
+	}
+
+
+
+	@Override
+	public void displayGrid(IGrid grid) {
+		for (int r = 0; r < grid.getRows(); r++) {
+	        for (int c = 0; c < grid.getCols(); c++) {
+	            displayCell(grid, r, c);
+	        }
+	    }		
 	}
 
 }

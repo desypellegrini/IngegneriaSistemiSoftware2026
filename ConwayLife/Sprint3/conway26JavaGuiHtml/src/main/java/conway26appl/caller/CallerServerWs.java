@@ -12,7 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
  
 /*
- * PREMESSA: lanciare MainConwayGui
+ * PREMESSA: lanciare SistemaSJavalApplMsgsQueued
  *  
  * Componente che usa un WebSocketClient
  * per inviare messaggi su una WebSocket
@@ -25,7 +25,7 @@ public class CallerServerWs  {
 	private IApplMessage setctrl   = CommUtils.buildRequest("clientjava", "eval", "setcontroller", "server"  );
 	// Un latch per evitare che il programma termini prima di ricevere la risposta
 	protected CountDownLatch latch = new CountDownLatch(1); //Inizializzo a 1 perché aspetto UNA risposta dal server
-    protected HttpClient client    = HttpClient.newHttpClient();  //Gestisce la connessione fisica. Può aprire un tunnel WebSocket
+    protected HttpClient client    = HttpClient.newHttpClient();  
     protected String name;
     
     public CallerServerWs( ) throws Exception {
@@ -33,13 +33,12 @@ public class CallerServerWs  {
     	sendCellChange( );
     }
 
-    //Invio del Messaggio
     protected void sendRawMessage( ) throws InterruptedException {
     	//HttpClient client = HttpClient.newHttpClient();
         
         WebSocket webSocket = client.newWebSocketBuilder()
             .buildAsync(URI.create("ws://localhost:8080/chat"), new WebSocketListener(latch))
-            .join(); //Tenta di aprire la connessione all'indirizzo del server (ws://...) in modo asincrono, e aspetta che la connessione sia effettivamente stabilita prima di proseguire
+            .join();
 
         // Invio di un messaggio al server
         webSocket.sendText(setctrl.toString(), true);
@@ -61,20 +60,20 @@ public class CallerServerWs  {
         WebSocket webSocket = client.newWebSocketBuilder()
             .buildAsync(URI.create("ws://localhost:8080/eval"), new WebSocketListener(latch))
             .join();
-        
+
         // Invio di un messaggio al server
-        // webSocket.sendText(setctrl.toString(), true);
+        //webSocket.sendText(setctrl.toString(), true);
         
-        String c56 = reqmsg.toString().replace("CELL", "cell(5,6,1)"); // Prende il messaggio base e inserisce i dati reali
+        String c56 = reqmsg.toString().replace("CELL", "cell(5,6,1)");
         CommUtils.outmagenta("CallerServerWs | send " + c56);
-        webSocket.sendText(c56, true); // Invia fisicamente la stringa sulla rete. true indica che il messaggio è completo
+        webSocket.sendText(c56, true);
 
         // Aspetta che la connessione venga chiusa o interrotta
         latch.await();
     }     
     
     
-    // Questa classe interna gestisce gli eventi che arrivano dal server
+    
     private static class WebSocketListener implements WebSocket.Listener {
         private final CountDownLatch latch;
 
@@ -83,7 +82,7 @@ public class CallerServerWs  {
         }
 
         @Override
-        public void onOpen(WebSocket webSocket) { //Eseguito quando il tunnel viene creato con successo
+        public void onOpen(WebSocket webSocket) {
             System.out.println("CallerServerWs | --- Connessione aperta ---");
             WebSocket.Listener.super.onOpen(webSocket);
         }
@@ -95,7 +94,7 @@ public class CallerServerWs  {
          * 
          */
         @Override
-        public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) { //Viene eseguito ogni volta che il server invia un dato
+        public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
             CommUtils.outmagenta("CallerServerWs | Messaggio ricevuto dal server: " + data);
             return WebSocket.Listener.super.onText(webSocket, data, last);
             //non fa "nulla" di operativo, ma serve a gestire il flusso dei dati (backpressure).
