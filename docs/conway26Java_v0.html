@@ -50,376 +50,129 @@ Realizzazione del  in Java del
 
 <div class="remark">
     Per Cell, dopo aver parlato con il committente, formalizzo il seguente modello:<br>
-    <b>ICell</b>: <pre><code>
-package main.java.conway.domain;
+    <b>ICell</b>: <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/conway/domain/ICell.java" target="_blank">ICell.java</a>.
+	<br>
 
-public interface ICell {
-	boolean isAlive();               //ha la capacità di rispondere ad una sorta di query con il proprio stato (viva o morta)
-	void setStatus(boolean status);  //ha la capacità di modificare il proprio stato interno secondo un valore booleano 
-	void switchCellState();          //ha la capacità di passare da viva a morta e viceversa 
-}
-</code>
-</pre>
-
-<b>Test plan per Cell</b>: <pre><code>
-package main.java.test;
-
-public class CellTest {
-	private ICell c;
-	
-	@Before
-	public void setup() {
-		System.out.println("ConwayLifeTest | setup");	
-		c = new Cell();
-	}
-
-	@After
-	public void down() {
-		System.out.println("ConwayLifeTest | down");
-	}
-	
-	@Test 
-	public void testCellAlive() {
-		System.out.println("ConwayLifeTest | doing alive");
-		c.setStatus(true);
-		boolean r = c.isAlive();
-		assertTrue(r);
-	}
-	
-	@Test 
-	public void testCellDead() {
-		System.out.println("ConwayLifeTest | doing dead");
-		c.setStatus(false);
-		boolean r = c.isAlive();
-		assertTrue(!r);
-	}
-}
-</code>
-</pre>
+<b>Test plan per Cell</b>: <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/test/CellTest.java"target="_blank">CellTest.java</a>
 </div>
 
 <div class="remark">
     Il committente ha un'idea di Grid composta da Cell. La Grid è un'entità a due dimensioni, con righe e colonne.<br>
-    <b>IGrid</b>: <pre><code>
-package main.java.conway.domain;
-
-public interface IGrid {
-    // ha la capacità di restituire le proprie dimensioni
-	public int getRows();   //(primitiva)
-    public int getCols();   //(primitiva)
-    public void setCellState(int row, int col, boolean state);
-    // ha la capacità di restituire una sua componente
-    public ICell getCell(int row, int col);   //(primitiva)
-    public boolean getCellValue(int row, int col);
-    // ha la capacità di resettare lo stato di tutti i componenti (celle)
-    public void reset();   //(non primitiva)
-}
-</code>
-</pre>
+    <b>IGrid</b>: <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/conway/domain/IGrid.java" target="_blank">IGrid.java</a>.
+	<br>
 <b>Test plan per Grid</b>: <br>
 Sviluppo un test plan per definire il comportamento atteso della griglia. 
 <ol>
-    <li>mi assicuro che i metodi get restituiscano un numero naturale</li>
-    <li>nella reset controllo che tutte le celle siano morte</li>
+    <li>Mi assicuro che i metodi get restituiscano un numero naturale</li>
+    <li>Nella reset controllo che tutte le celle siano morte</li>
 </ol>
-<pre><code>
-package main.java.test;
+<a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/test/GridTest.java"target="_blank">GridTest.java</a>
 
-public class GridTest {
-	private Grid grid;
-	private final int nRows = 5;
-	private final int nCols = 5;
-	
-	@Before
-	public void setup() {
-		System.out.println("GridTest | setup");	
-		grid = new Grid(nRows,nCols);
-	}
-	
-	@After
-	public void down() {
-		System.out.println("GridTest | down");
-	}
-	
-	@Test
-    public void testDims() {
-        System.out.println("testDims ---------------------" );
-        int nr = grid.getRows();
-        int nc = grid.getCols();
-        // Verifica che sono i numeri attesi
-        assertTrue(nr == nRows && nc == nCols);
-        // Verifica che devono essere > 0
-        assertTrue(nr > 0 && nc > 0);
-    }
-	
-	@Test
-	public void testCGridCellValue() {
-		System.out.println("testCGridCellValue ---------------------" );
-		grid.setCellState(0,0,true);
-		assertTrue(grid.getCellValue(0,0));
-		assertFalse(grid.getCellValue(0,1));
-	}
-
-    @Test
-    public void testReset() {
-        System.out.println("testReset ---------------------" );
-        // imposto alcune celle a true
-        grid.setCellState(0, 0, true);
-        grid.setCellState(2, 2, true);
-        
-        // chiamo il metodo reset
-        grid.reset();
-        
-        // verifico effettivamente che tutte siano morte
-        for (int i = 0; i < grid.getRows(); i++) {
-            for (int j = 0; j < grid.getCols(); j++) {
-                assertFalse("La cella " + i + "," + j + " dovrebbe essere morta", 
-                            grid.getCellValue(i, j));
-            }
-        }
-    }
-
-	@Test
-	public void testGridRep() {
-		assertTrue(grid.toString().trim().startsWith(". . . . ."));
-	}
-	@Test
-	public void testPrintGrid() {
-		System.out.println("testPrintGrid ---------------------" );
-		grid.setCellState(0,0,true);
-		grid.setCellState(0,1,true);
-		grid.setCellState(0,2,true);
-		grid.setCellState(0,3,true);
-		grid.setCellState(0,4,true);
-		//grid.printGrid();
-	}
-}
-</code>
-</pre>
 </div>
 
 <div class="remark">
     Il committente non sa cosa sia Life, ma mi dice che è la logica del gioco e contiene le regole del gioco. Strutturalmente, Life è composta da una griglia.<br>
-    <b>LifeInterface</b>: <pre><code>
-package main.java.conway.domain;
-
-public interface LifeInterface {
-	/** Calcola l'evoluzione dello stato alla generazione successiva */
-    void nextGeneration();
-
-    /** Restituisce lo stato di una cella specifica */
-    boolean isAlive(int row, int col);  //(non primitiva)
-
-    /** Imposta lo stato di una cella */
-    void setCell(int row, int col, boolean alive);  //(non primitiva)
-
-    /** Restituisce il numero di righe e colonne */
-    //int getRows();
-    //int getCols();
-    
-    /** Restituisce la Cella */
-    ICell getCell(int row, int col);
-    
-    /** Restituisce la grid */
-    IGrid getGrid();
-    
-    /** pulisce */
-    void resetGrids();
-    
-    /** Restituisce una rappresentazione grafica testuale della grglia*/
-    //public String gridRep( );
-}
-</code>
-</pre>
+    <b>LifeInterface</b>: <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/conway/domain/LifeInterface.java"target="_blank">LifeInterface.java</a>
+<br>
 <b>Test plan per Life</b>: <br>
 Sviluppo un test plan per definire il comportamento atteso di Life. 
 <ol>
-    <li>imposto una configurazione conosciuta e controllo che segua le regole</li>
-    <li>nella reset imposto una cella, chiamo nextGeneration e controllo che sia morta</li>
+    <li>Imposto una configurazione conosciuta e controllo che segua le regole</li>
+    <li>Nella reset imposto una cella, chiamo nextGeneration e controllo che sia morta</li>
 </ol>
-<pre><code>
-package main.java.test; 
+<a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/test/LifeTest.java"target="_blank">LifeTest.java</a>
+<br><br>
 
-public class LifeTest {
-private LifeInterface lifeModel;
-private final int nRows = 5;
-private final int nCols = 5;
-
-	@Before
-	public void setup() {
-		System.out.println("GridTest | setup");	
-		lifeModel = Life.CreateLife(nRows, nCols);
-	}
-	@After
-	public void down() {
-		System.out.println("GridTest | down");
-	}
-	
-	/**
-     * Verifica che una linea orizzontale di 3 celle diventi verticale
-     */
-	@Test
-    public void testBlinkerEvolution() {
-        System.out.println("LifeTest | testBlinkerEvolution");
-        // Imposto configurazione orizzontale conosciuta
-        lifeModel.setCell(2, 1, true);
-        lifeModel.setCell(2, 2, true);
-        lifeModel.setCell(2, 3, true);
-
-        lifeModel.nextGeneration();
-
-        // Controllo che segua le regole (diventa verticale)
-        assertTrue("Cella centrale deve restare viva", lifeModel.isAlive(2, 2));
-        assertTrue("Cella sopra deve nascere", lifeModel.isAlive(1, 2));
-        assertTrue("Cella sotto deve nascere", lifeModel.isAlive(3, 2));
-        assertFalse("Cella sinistra deve morire", lifeModel.isAlive(2, 1));
-        assertFalse("Cella destra deve morire", lifeModel.isAlive(2, 3));
-    }
-	
-	/**
-     * Reset e pulizia
-     */
-	@Test
-    public void testResetBehavior() {
-        System.out.println("LifeTest | testResetBehavior");
-        // Imposto una cella viva
-        lifeModel.setCell(1, 1, true);
-        assertTrue(lifeModel.isAlive(1, 1));
-
-        // Eseguo il reset
-        lifeModel.resetGrids();
-
-        // Verifico che sia morta
-        assertFalse("Dopo il reset la cella deve essere morta", lifeModel.isAlive(1, 1));
-        
-        // Controllo aggiuntivo: dopo nextGeneration su griglia vuota, resta vuota
-        lifeModel.nextGeneration();
-        assertFalse("Dopo nextGeneration su griglia vuota, non deve nascere nulla", lifeModel.isAlive(1, 1));
-    }
-
-}
-</code>
-</pre>
-
-Definisco inoltre il LifeController, al cui interno ha un thread (play), che dà vita ai vari elementi trasferendo loro il controllo. LifeController definisce le interfacce per permettere a qualsiasi dispositivo di visualizzare la griglia. Si tratta di un componente proattivo (quando attivato, il thread play chiama ripetutamente nextGeneration) e reattivo (se c’è un input device che dice start/stop, lui parte/si ferma).
-<pre><code>
-package main.java.conway.domain;
-
-public class LifeController implements GameController{
-	private int generationTime = 500;
-    private  LifeInterface life;
-    private  IOutDev outdev; 
- 	protected boolean running = false;
-    protected int epoch = 0;
-    
-    public LifeController( LifeInterface game, IOutDev outdev ){  
-        this.life = game;       
-        this.outdev = outdev;
-        System.out.println("LifeController CREATED");
-        if( outdev != null ) 
-        	outdev.displayGrid( life.getGrid() );
-     }
-
-	@Override
-	public int getGenTime() {
-		return generationTime;
-	}
-
-	@Override
-	public void switchCellState(int x, int y) {
-		ICell c = life.getCell(x, y); 
-		c.switchCellState( );   
-		if( outdev != null ) 
-			outdev.displayGrid(life.getGrid());
-	}
-	
-	protected void startTheGame() {
-		if( running ) return;   //start sent while running
-		running = true;
-		epoch = 0;
-		play();		
-	}
-	
-	protected void stopTheGame() {
-		running = false;		
-	}
-
-	protected void clearTheGame() {
-		if( outdev != null ) 
-			outdev.display("lfctrl: clearing");
- 		stopTheGame();
- 		CommUtils.delay(500);   //prima fermo e poi ...
-		epoch = 0;
-		resetAndDisplayGrids();   
-	}
-	
-	protected void printout( String s ) {
-		if( outdev != null ) 
-			outdev.display(s);
-	}
-	
-	 protected void play() {  
-			new Thread() {
-			public void run() {			
-				printout("gamestarted " + life.getGrid()) ; 
-				while( running ) {
-						CommUtils.delay(generationTime);
-						life.nextGeneration();
-						if( outdev != null ) outdev.displayGrid( life.getGrid()  );
-
-						CommUtils.outblue("---------Epoch ---- "+epoch++ );
-				}
-				printout("gamestopped"); 
-			}
-			}.start();
- }
-	 
-	protected void resetAndDisplayGrids() {
-			life.resetGrids();
-			if(outdev != null) 
-				outdev.displayGrid( life.getGrid() );
-	}
-
-	@Override
-	public void onStart() {
-		startTheGame();
-	}
-
-	@Override
-	public void onStop() {
-		stopTheGame();	
-	}
-
-	@Override
-	public void onClear() {
-		clearTheGame();			
-	}
-
-	@Override
-	public int numEpoch() {
-		return epoch;
-	}
-
-}
-</code></pre>
+Definisco inoltre il <b>LifeController</b>, al cui interno ha un thread (play), che dà vita ai vari elementi trasferendo loro il controllo. LifeController definisce le interfacce per permettere a qualsiasi dispositivo di visualizzare la griglia. Si tratta di un componente proattivo (quando attivato, il thread play chiama ripetutamente nextGeneration) e reattivo (se c’è un input device che dice start/stop, lui parte/si ferma).
+<br>
+<a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/conway/domain/LifeController.java"target="_blank">LifeController.java</a>
 
 </div>
  
 
 <h2>Problem analysis</h2>
+<div class="remark">
+    <ul>
+        <li>
+            Natura Proattiva: il sistema deve evolvere autonomamente secondo le regole di Conway. 
+            Questo implica la necessità di un'entità (<i>Controllo</i>) capace di scandire il tempo e invocare 
+            la generazione successiva senza interventi esterni costanti.
+        </li>
+        <li>
+            Natura Reattiva: il sistema deve restare in attesa di eventi asincroni (comandi dell'utente come 
+            Start, Stop, Clear o click sulle celle). È necessario quindi un meccanismo che permetta di 
+            interrompere o modificare lo stato del sistema proattivo in modo sicuro.
+        </li>
+        <li>
+            Indipendenza della Vista: come indicato in <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.6.3'>Problema della vista del gioco</a>, la visualizzazione del gioco non deve essere cablata nel sistema. È necessario definire un 
+    'linguaggio di output' astratto (interfaccia <code>IOutDev</code>) che permetta di 
+    iniettare diverse implementazioni della vista (Mock, Swing, HTML) a seconda del contesto 
+    di deployment, garantendo il disaccoppiamento tra logica e rappresentazione.
+        </li>
+		<li>
+    Architettura Logica e Interazione: Come mostrato nel modello logico del sistema, 
+    i componenti comunicano attraverso messaggi/eventi. Il <i>Controller</i> deve fungere da 
+    mediatore tra i comandi provenienti dai dispositivi di input e lo stato del Modello, 
+    garantendo che le azioni dell'utente (es. switch di una cella) siano gestite correttamente 
+    rispetto al ciclo proattivo di evoluzione.
+	<br>
+    <b>Rappresentazione dell'Architettura Logica:</b><br><br>
+    <img src="./img/architetturaLogica.png" alt="Architettura Logica Conway" width="30%">
+    <br>
+    <i>Il diagramma evidenzia la separazione tra il controllo (LifeController), 
+    il dominio (Life) e i dispositivi di I/O.</i>
+</li>
+    </ul>
+</div>
  
 
 <h2>Test plans</h2> 
 
 
 <h2>Project</h2> 
+<div class="remark">
+    Il progetto traduce l'architettura logica in componenti software seguendo il principio del <i>disaccoppiamento</i>:
+    <ul>
+        <li>
+            Il sistema si basa su interfacce 
+            che definiscono il comportamento dei componenti senza vincolarli a un'implementazione (LifeInterface, 
+            IGrid, ICell, IOutDev).
+        </li>
+        <li>
+            La classe Life implementa la transizione di stato. 
+            Per garantire l'invarianza, utilizza una griglia corrente e una griglia next. 
+            Il calcolo della generazione avviene leggendo dalla prima e scrivendo nella seconda, 
+            effettuando poi uno swap dei riferimenti.
+        </li>
+        <li>
+            LifeController implementa GameController e 
+            gestisce il comportamento autonomo del sistema tramite un thread interno. Questo permette di 
+            mantenere il battito del gioco (<i>generationTime</i>) separato dalla gestione dei comandi Start/Stop/Clear.
+        </li>
+        <li>
+            Il MainConwayLifeJava agisce come configuratore del sistema, 
+            istanziando i componenti concreti e iniettandoli nel Controller, realizzando così il sistema finale.
+        </li>
+    </ul>
+    <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/conway/MainConwayLifeJava.java" target="_blank">Codice di Configurazione (Main)</a>
  
- 
+ </div>
 
 <h2>Testing</h2> 
  
 
 <h2>Deployment</h2> 
+<div class="remark">
+    Il deployment del sistema è basato sull'utilizzo di <b>Gradle</b> come strumento di automazione per la build.
+	Tramite il task jar definito nel file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/build.gradle" target="_blank">build.gradle</a>, 
+	il sistema viene compilato in un unico archivio eseguibile che include tutte le librerie 
+	necessarie (<i>unibo.basicomm23</i>, <i>uniboInterfaces</i>, ecc.).<br>
+	Il file JAR così generato permette l'esecuzione del gioco Conway 
+	su qualsiasi macchina dotata di Java Runtime Environment, senza la necessità di un IDE (Eclipse) 
+	o di configurazioni manuali del classpath.<br>
+    Il comando per l'avvio del sistema distribuito è: 
+            <i>java -jar conway26Java-1.0.jar</i>.
+</div>
 
  
 <h2>Maintenance</h2> 

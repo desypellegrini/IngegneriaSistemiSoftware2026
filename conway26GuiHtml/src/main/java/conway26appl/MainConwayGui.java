@@ -4,7 +4,7 @@ import conway.io.IoJavalin;
 //import main.java.conway.domain.*;
 import unibo.basicomm23.utils.CommUtils;
 public class MainConwayGui  {
-   	private IoJavalin server = new IoJavalin();
+   	private IoJavalin server = new IoJavalin("guiserver");
   	
     public static void main(String[] args) {
 	    System.out.println("MainConway | STARTS " );  

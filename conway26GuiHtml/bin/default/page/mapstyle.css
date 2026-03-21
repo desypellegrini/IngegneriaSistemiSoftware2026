@@ -17,5 +17,5 @@ body {
             font-weight: bold;
             color: white;
         }
-        .live { background-color: #28a745; }
-        .dead { background-color: #dc3545; }
+        .live { background-color: #dc3545; }
+        .dead { background-color: #28a745  }
