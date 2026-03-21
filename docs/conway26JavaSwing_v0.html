@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>conway26JavaSwing_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>ConwayLife Sprint2</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+Realizzazione di una GUI in Swing per <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.6'>GAME OF LIFE DI CONWAY</a>. Questa fase rappresenta lo Sprint 2, inteso come evoluzione del precedente sistema (Sprint 1), con l'obiettivo di sostituire l'output su console con una rappresentazione grafica interattiva.
+
+<h2>Requirements</h2>
+
+ <div class="remark">
+    Oltre ai requisiti già individuati nello <a href="conway26Java_v0.html">Sprint 1</a>, lo Sprint 2 prevede i seguenti nuovi requisiti:
+    <ol>
+        <li>
+            La griglia di gioco deve essere visualizzata in una finestra Swing (anziché solo su console).
+        </li>
+        <li>
+            L'utente deve poter interagire con la griglia per:
+            <ul>
+                <li>Configurare lo stato iniziale delle celle tramite click del mouse.</li>
+                <li>Controllare l'evoluzione tramite pulsanti specifici: <b>START</b>, <b>STOP</b> e <b>CLEAR</b>.</li>
+            </ul>
+        </li>
+        <li>
+            Il sistema deve essere realizzato come evoluzione del precedente, riutilizzando la logica di dominio (il file <i>.jar</i> dello Sprint 1) come componente libreria.
+        </li>
+    </ol>
+</div>
+ 
+
+ 
+
+<h2>Requirement analysis</h2>
+
+<div class="remark">
+Mi concentro sulla verifica della sostituibilità dei componenti di I/O.
+L'obiettivo è dimostrare che le interfacce definite nello <a href="conway26Java_v0.html">Sprint 1</a> sono sufficienti a coprire i nuovi requisiti funzionali:
+<ul>
+    <li>
+        L'interfaccia IOutDev rimane il contratto fondamentale. 
+        La nuova classe <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint2/conway26JavaSwing/src/main/java/conway/devices/ConwayLifeGridClaude.java" target="_blank">ConwayLifeGridClaude</a> deve implementare tale interfaccia per poter 
+        ricevere i dati dal modello senza che quest'ultimo sia consapevole del cambiamento tecnologico 
+        (da Console a Swing).
+    </li>
+    <li>
+        L'interazione tramite mouse e pulsanti viene ricondotta alle operazioni 
+        definite in <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/conway/domain/GameController.java"target="_blank">GameController</a>. 
+        La GUI agisce quindi come un <i>Input Device</i> che invoca 
+        metodi come <i>onStart()</i> o <i>switchCellState()</i>, confermando l'architettura 
+        reattiva analizzata in precedenza.
+    </li>
+    <li>
+        Le entità ICell e IGrid non subiscono variazioni, 
+        poiché la logica di dominio (il "cosa") è indipendente dalla sua rappresentazione (il "come").
+    </li>
+</ul>
+In sintesi, si conferma che l'architettura logica individuata nello Sprint 1 è chiusa alle modifiche ma aperta alle estensioni.
+
+</div>
+ 
+
+<h2>Problem analysis</h2>
+<div class="remark">
+L'evoluzione del sistema verso una GUI Swing pone delle questioni:
+<ul>
+    <li>
+        Devo utilizzare il file <i>conway26Java-1.0.jar</i> senza toccarne il codice, dimostrando che le interfacce dello Sprint 1 sono sufficientemente solide da supportare una nuova vista grafica senza modifiche alla logica.
+    </li>
+    <li>
+        A differenza della console, la GUI genera eventi (click su celle e pulsanti). Il problema è come inviare questi comandi al <i>LifeController</i>. La soluzione è l'iniezione del controller nella GUI, che delega le azioni dell'utente ai metodi di <i>GameController</i>.    
+    </li>
+    <li>
+        Visto che il gioco evolve da solo in un thread separato, la GUI deve reagire ai cambiamenti del modello. Il metodo <i>displayGrid</i> agisce come punto di contatto: ogni volta che il controller lo chiama, la GUI deve ridisegnare la griglia (<i>repaint</i>).
+    </li>
+</ul>
+
+</div>
+ 
+
+<h2>Test plans</h2> 
+<div class="remark">
+    Ho due obiettivi di testing in questa fase:
+    <ol>
+        <li>
+            esecuzione dei test JUnit dello Sprint 1 per garantire che l'introduzione della GUI non abbia alterato la correttezza della logica di dominio (<i>Life</i>, <i>Grid</i>, <i>Cell</i>).
+        </li>
+        <li>
+            verifica per accertarsi che:
+            <ul>
+                <li>il click sulla cella della GUI invochi correttamente <i>switchCellState</i> sul Controller</li>
+                <li>la pressione dei tasti START/STOP attivi o metta in pausa il thread di evoluzione</li>
+                <li>il comando CLEAR resetti visivamente la griglia dopo aver pulito il modello</li>
+            </ul>
+        </li>
+    </ol>
+</div>
+
+
+<h2>Project</h2> 
+<div class="remark">
+    Il progetto di questo sprint realizza l'evoluzione del sistema come composizione di componenti:
+    <ul>
+        <li>
+            La logica di dominio non è stata riscritta. Utilizzo il file <i>conway26Java-1.0.jar</i> (prodotto nello Sprint 1) come libreria esterna, importata nel <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint2/conway26JavaSwing/build.gradle" target="_blank">build.gradle</a>.
+        </li>
+        <li>
+            Implemento la classe <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint2/conway26JavaSwing/src/main/java/conway/devices/ConwayLifeGridClaude.java" target="_blank">ConwayLifeGridClaude.java</a>, che estende <i>JFrame</i> e implementa <i>IOutDev</i>, agendo sia come visualizzatore della griglia che come sorgente di input per l'utente.
+        </li>
+        <li>
+            Il nuovo <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint2/conway26JavaSwing/src/main/java/conway/MainConwayLifeJava.java" target="_blank">MainConwayLifeJava.java</a> configura il sistema iniettando il riferimento della GUI nel LifeController. 
+            Per permettere alla GUI di inviare comandi (Start/Stop/Click), viene effettuata una back-injection del controller nella GUI tramite il metodo <i>setController</i>.
+        </li>
+    </ul>
+
+</div>
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:60%;text-align:left;color:white">
+By Desirée Pellegrini email: desiree.pellegrini@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fotodesy.jpeg" alt="emiglio" width="15%" height="15%">
+GIT repo: https://github.com/desypellegrini/IngegneriaSistemiSoftware2026.git 
+</div> 
+</body>
+</html>
