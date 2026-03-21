@@ -14,7 +14,7 @@
  * [ConwayLife Sprint1](ConwayLife/Sprint1/conway26Java): impostazione di un primo prototipo
    in Java con dispositivi Mock di I/O. <i>Distribuzione</i>: file jar. <i>Documentazione</i>: [conway26Java_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26Java_v0.html)
  * [ConwayLife Sprint2](ConwayLife/Sprint2/conway26JavaSwing): <b>evoluzione</b> del primo prototipo
-   con un dispositivo di output realizzato in Swing. <i>Distribuzione</i>: file jar
+   con un dispositivo di output realizzato in Swing. <i>Distribuzione</i>: file jar. <i>Documentazione</i>: [conway26JavaSwing_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26JavaSwing_v0.html)
  ### Sistemi come servizi
  * ...
  ### Sistema ConwayLife con pagine HTML
