@@ -2,12 +2,12 @@
 wscontrol.js
 */
  	var pageId         = "unknown";
-	var cmdMsgTemplate = "msg( eval, dispatch, SENDER, lifectrl, CMD, 0 )"
+	var cmdMsgTemplate = "msg( do, dispatch, SENDER, guiserver, CMD, 0 )"
 	var opened         = false
 	var socketToGui;
 	
 	function sendCmdToServer(cmd) {
-		 //console.log("sendCmdToServer:" + cmd )
+		 console.log("sendCmdToServer:" + cmd + " pageId=" + pageId)
 		 msg = cmdMsgTemplate.replace("CMD", cmd).replace("SENDER",pageId)
 		 //addItem("sendCmdToServer: " + msg + " opened=" + opened);
 		 console.log("sendCmdToServer:" + msg )		 
@@ -19,7 +19,7 @@ wscontrol.js
  /*1*/	  
       console.log("initWS | window.location.host=" + window.location.host );
 	  if( window.location.host =="" ){
-		 socketToGui = new WebSocket("ws://localhost:8080/chat");
+		 socketToGui = new WebSocket("ws://localhost:8080/eval");
 		 console.log("initWS | socketToGuiiii=" + socketToGui );
 		 //socketToGui.send("hello world su chat");
 	  }else{
@@ -28,10 +28,10 @@ wscontrol.js
 	  } 
 
  /*2*/socketToGui.onopen = () => {
-     console.log("initWS | Connesso a eval");
-	 addItem("initWS | Connesso a chat");
-	 opened = true;
-	 sendCmdToServer("ready" );
+	     console.log("initWS | Connesso a eval");
+		 addItem("initWS | Connesso a eval");
+		 opened = true;
+		 sendCmdToServer("ready" );
      }
 
  /*3*/socketToGui.onmessage = (event) => {

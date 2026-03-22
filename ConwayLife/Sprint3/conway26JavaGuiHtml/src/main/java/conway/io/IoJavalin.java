@@ -1,28 +1,38 @@
 package conway.io;
-
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
+import io.javalin.websocket.WsConnectContext;
+import io.javalin.websocket.WsContext;
 import io.javalin.websocket.WsMessageContext;
-import main.java.conway.domain.GameController;
-import main.java.conway.domain.IGrid;
-import main.java.conway.domain.IOutDev;
 import unibo.basicomm23.utils.CommUtils;
 import unibo.basicomm23.interfaces.IApplMessage;
 import unibo.basicomm23.msg.ApplMessage;
 
-public class IoJavalin implements IOutDev{
+public class IoJavalin {
 	
-	private WsMessageContext pageCtx ;
-	private GameController cc;
-	
-	public IoJavalin() {
+	private static AtomicInteger pageCounter = new AtomicInteger(0);
+	private WsMessageContext pageCtx, lifeCtrlCtx ;
+	private String name;
+	private String firstCaller        = null;
+	//private WsConnectContext ownerctx = null;
+	protected Vector<WsConnectContext> allConns = new Vector<WsConnectContext>();
+
+	public IoJavalin(String name) {
+		this.name = name;
         var app = Javalin.create(config -> {
-			config.staticFiles.add(staticFiles -> {
+        	// Configurazione globale del timeout per le connessioni (dalla versione 6.x in avanti)
+            //config.http.asyncTimeout = 300000L; // 5 minuti in millisecondi
+        	config.jetty.modifyWebSocketServletFactory(factory -> {
+                // Imposta il timeout (ad esempio 5 minuti)
+                factory.setIdleTimeout(Duration.ofMinutes(30));
+            });
+        	config.staticFiles.add(staticFiles -> {
 				staticFiles.directory = "/page";
 				staticFiles.location = Location.CLASSPATH; // Cerca dentro il JAR/Classpath
 				/*
@@ -43,7 +53,8 @@ public class IoJavalin implements IOutDev{
         	 * (dentro il JAR o nelle cartelle dei sorgenti di Eclipse), 
         	 * rendendo il codice universale
          	 */
-        	var inputStream = getClass().getResourceAsStream("/page/ConwayInOutPage.html");       	
+        	//var inputStream = getClass().getResourceAsStream("/page/ConwayInOutPage.html");  
+        	var inputStream = getClass().getResourceAsStream("/page/LifeIInOutCanvas.html");     
         	if (inputStream != null) {
         		// Trasformiamo l'inputStream in stringa (o lo mandiamo come stream)
         	    String content = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
@@ -54,15 +65,15 @@ public class IoJavalin implements IOutDev{
 		    //ctx.result("Hello from Java!"));  //la forma più semplice di risposta
         }); 
         
-        app.get("/greet/{name}", ctx -> {
-            String name = ctx.pathParam("name");
-            ctx.result("Hello, " + name + "!");
-        }); //http://localhost:8080/greet/Alice
-        
-        app.get("/api/users", ctx -> {
-            Map<String, Object> user = Map.of("id", 1, "name", "Bob");
-            ctx.json(user); // Auto-converts to JSON
-        });
+//        app.get("/greet/{name}", ctx -> {
+//            String pname = ctx.pathParam("name");
+//            ctx.result("Hello, " + pname + "!");
+//        }); //http://localhost:8080/greet/Alice
+//        
+//        app.get("/api/users", ctx -> {
+//            Map<String, Object> user = Map.of("id", 1, "name", "Bob");
+//            ctx.json(user); // Auto-converts to JSON
+//        });
         
         /*
          * Javalin v5+: Si passa solo la "promessa" (il Supplier del Future). 
@@ -70,163 +81,110 @@ public class IoJavalin implements IOutDev{
          * lui fa ctx.result(stringa). Se restituisce un oggetto, lui fa ctx.json(oggetto).
          * 
          */
-        app.get("/async", ctx -> {
-        	ctx.future(() -> {
-	        	// Creiamo il future
-	            CompletableFuture<String> future = new CompletableFuture<>();
-	            
-	            // Eseguiamo il lavoro in un altro thread
-	            new Thread(() -> { 
-	                try {
-	                    Thread.sleep(2000); // Simulazione calcolo pesante
-	                    future.complete("IoJavalin | Risultato calcolato asincronamente");
-	                } catch (Exception e) {
-	                    future.completeExceptionally(e);
-	                }
-	            });
-	            
-	            return future; // Restituiamo il future a Javalin
-        	});
-        });
-        
-        app.get("/async1", ctx -> {
-            ctx.future(() -> CompletableFuture.supplyAsync(() -> {
-                // Simuliamo l'operazione lenta
-                try {
-                    Thread.sleep(2000); 
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                return "IoJavalin | Risultato calcolato con supplyAsync";
-            }));
-        });
+//        app.get("/async", ctx -> {
+//        	ctx.future(() -> {
+//	        	// Creiamo il future
+//	            CompletableFuture<String> future = new CompletableFuture<>();
+//	            
+//	            // Eseguiamo il lavoro in un altro thread
+//	            new Thread(() -> { 
+//	                try {
+//	                    Thread.sleep(2000); // Simulazione calcolo pesante
+//	                    future.complete(name + " | Risultato calcolato asincronamente");
+//	                } catch (Exception e) {
+//	                    future.completeExceptionally(e);
+//	                }
+//	            });
+//	            
+//	            return future; // Restituiamo il future a Javalin
+//        	});
+//        });
+//        
+//        app.get("/async1", ctx -> {
+//            ctx.future(() -> CompletableFuture.supplyAsync(() -> {
+//                // Simuliamo l'operazione lenta
+//                try {
+//                    Thread.sleep(2000); 
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//                return name + " | Risultato calcolato con supplyAsync";
+//            }));
+//        });
 /*
  * --------------------------------------------
  * Parte Websocket
  * --------------------------------------------
- */
-        
-        app.ws("/chat", ws -> {
-            ws.onConnect(ctx -> CommUtils.outgreen("Client connected chat!"));
-            ws.onMessage(ctx -> {
-                String message = ctx.message();
-                CommUtils.outcyan("IoJavalin |  riceve:" + message);
-                ctx.send("Echo: " + message);
-            });
-        });        
+ */      
         app.ws("/eval", ws -> {
-            ws.onConnect(ctx -> CommUtils.outgreen("IoJavalin | Client connected eval"));
-            ws.onMessage(ctx -> {
-                String message = ctx.message();     
-                CommUtils.outblue("IoJavalin |  eval receives:" + message );
-                try {
-                	IApplMessage m = new ApplMessage(message);
-                    CommUtils.outblue("IoJavalin |  eval:" + m.msgContent() );
-                    
-                    // ricevo un messaggio dal client: in base al contenuto discrimino il comportamento
-                    if( m.msgContent().equals("ready")) { 
-                    	pageCtx = ctx;  //memorizzo connession pagina
-                    }
-                    else if (m.msgContent().equals("start")){
-                    	// Il client ha premuto il pulsante START, allora faccio si che il GameController esegua onStart()
-                    	cc.onStart();
-                    }
-                    else if (m.msgContent().equals("stop")) {
-                    	// Il client ha premuto il pulsante STOP, allora faccio si che il GameController esegua onStop()
-                    	cc.onStop();
-                    }
-                    else if (m.msgContent().equals("clear")) {
-                    	// Il client ha premuto il pulsante CLEAR, allora faccio si che il GameController esegua onClear()
-                    	cc.onClear();
-                    }
-                    else if (m.msgContent().equals("exit")){
-                    	// Il client ha premuto il pulsante EXIT, allora eseguo close() del IOutDev
-                    	CommUtils.outred("IoJavalin | Ricevuto comando EXIT. Chiusura in corso...");
-                        cc.onStop(); // Ferma il gioco
-                    	this.close();
-                    }
-                    else if( m.msgContent().contains("cell(")) { 
-                    	// Il client ha premuto una cella, vado ad estrarre quale dal messaggio
-                    	decodeAndForwardCell(m.msgContent());
-                    }else ctx.send(m.msgContent());
-                }catch(Exception e) {
-                	CommUtils.outred("IoJavalin |  error:" + e.getMessage());
-                }               
-            });
+        	ws.onConnect(ctx -> {
+        	    CommUtils.outmagenta("Nuova connessione WebSocket stabilita");
+        	    // Non assegniamo l'owner qui, aspettiamo che la pagina si dichiari pronta
+        	});
+             
+        	ws.onMessage(ctx -> {
+        	    String message = ctx.message();
+        	    try {
+        	        // 1. Gestione REGISTRAZIONE OWNER (Interconnessione B)
+        	        // La pagina invia "canvasready" dentro un IApplMessage o stringa pura
+        	        if (message.contains("canvasready")) {
+        	            if (firstCaller == null) {
+        	                firstCaller = "caller1"; // Il primo browser che carica diventa Owner
+        	                pageCtx = ctx; 
+        	                sendsafe(ctx, "ID:caller1");
+        	                CommUtils.outgreen(name + " | OWNER assegnato al Browser (caller1)");
+        	            } else {
+        	                int id = pageCounter.incrementAndGet();
+        	                sendsafe(ctx, "ID:caller" + id);
+        	                CommUtils.outmagenta(name + " | OSSERVATORE collegato (caller" + id + ")");
+        	            }
+        	            return; // Messaggio gestito, usciamo
+        	        }
+
+        	        // 2. Gestione PROTOCOLLO IApplMessage (Interconnessione A)
+        	        IApplMessage m = new ApplMessage(message);
+        	        
+        	        // Se ricevo la griglia (Safe JSON con ;) la mando a tutti
+        	        if (m.msgId().equals("gridUpdate")) {
+        	            // Inoltra il messaggio a TUTTI i browser connessi
+        	            for (WsConnectContext conn : allConns) {
+        	                if (conn.session.isOpen()) {
+        	                    sendsafe(conn, m.toString());
+        	                }
+        	            }
+        	        }
+        	        // Se ricevo comandi dall'Owner (caller1), li mando al Controller
+        	        else if (m.msgSender().equals("caller1")) {
+        	            if (lifeCtrlCtx != null) sendsafe(lifeCtrlCtx, m.toString());
+        	        }
+        	        // Se è il controller che si registra
+        	        else if (m.msgId().equals("setcontroller")) {
+        	            lifeCtrlCtx = ctx;
+        	            CommUtils.outblue(name + " | Controller logico agganciato.");
+        	        }
+
+        	    } catch (Exception e) {
+        	        // Se non è un IApplMessage e non è canvasready, logghiamo l'errore
+        	        CommUtils.outred(name + " | Errore parsing messaggio: " + message);
+        	    }
+        	});
         });        
 	}
 	
+    protected void sendsafe(WsContext ctx, String msg) {
+    	synchronized (ctx.session) {  
+            if (ctx.session.isOpen()) {
+                ctx.send(msg);
+            }
+        }
+    }
+	
+
 	
 	public static void main(String[] args) {
 		var resource = IoJavalin.class.getResource("/pages");
 		CommUtils.outgreen("DEBUG: La cartella /page si trova in: " + resource);
-		new IoJavalin();
-	}
-
-	// funzione per iniettare il GameController in IoJavalin
-	public void setController(GameController cc) {
-		this.cc = cc;
-	}
-	
-	// funzione di appoggio per estrarre riga e colonna della cella e andare a cambiarle stato
-	private void decodeAndForwardCell(String content) {
-	    try {
-	        String data = content.replace("cell(", "").replace(")", "");
-	        
-	        String[] parts = data.split(",");
-	        
-	        if (parts.length >= 2) {
-	            int x = Integer.parseInt(parts[0].trim());
-	            int y = Integer.parseInt(parts[1].trim());
-
-	            CommUtils.outblue("IoJavalin | Comando cella decodificato: x=" + x + ", y=" + y);
-	            
-	         // questo metodo si occupa di comunicarlo al cliente, invocando displayCell()
-	            cc.switchCellState(x, y); 
-	        }
-	    } catch (NumberFormatException e) {
-	        CommUtils.outred("IoJavalin | Errore nel formato della cella: " + content);
-	    }
-	}
-
-
-	@Override
-	public void display(String msg) {
-		if (pageCtx != null && pageCtx.session.isOpen()) {
-	        pageCtx.send(msg);
-	    }
-		
-	}
-
-
-
-	@Override
-	public void displayCell(IGrid grid, int x, int y) {
-		if (pageCtx != null && pageCtx.session.isOpen()) {
-	        int state = grid.getCellValue(x, y) ? 1 : 0; 
-	        pageCtx.send("cell(" + x + "," + y + "," + state + ")");
-	    }
-		
-	}
-
-
-
-	@Override
-	public void close() {
-        if (pageCtx != null && pageCtx.session.isOpen()) {
-            pageCtx.session.close();
-        }
-	}
-
-
-
-	@Override
-	public void displayGrid(IGrid grid) {
-		for (int r = 0; r < grid.getRows(); r++) {
-	        for (int c = 0; c < grid.getCols(); c++) {
-	            displayCell(grid, r, c);
-	        }
-	    }		
+		new IoJavalin("guiserver");
 	}
 
 }

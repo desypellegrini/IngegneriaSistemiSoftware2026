@@ -20,12 +20,13 @@
 <div class="body">  
 
 <h2>Introduction</h2>
-Realizzazione del  in Java del
-<a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.6'>GAME OF LIFE DI CONWAY</a>
- 
+Realizzare l'evoluzione del sistema verso un'architettura basata su servizi, per dotare il gioco <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.6'>GAME OF LIFE DI CONWAY</a>
+  di una GUI HTML come dispositivo di I/O, 
+    trasformando il sistema in un componente distribuito capace di interagire con il mondo esterno 
+    tramite protocolli di rete (WebSockets e HTTP).
+
 <h2>Requirements</h2>
 
- 
 <div class="remark">
 	<ol>
 		<li>
@@ -47,13 +48,32 @@ Realizzazione del  in Java del
 </div>
  
 
- 
-
 <h2>Requirement analysis</h2>
+<div class="remark">
+    Chiarisco la natura dei nuovi elementi introdotti:
+    <ul>
+        <li>Componente ConwayGuiPageServer: un servizio (basato su Javalin) che eroga la pagina HTML e gestisce il canale WebSocket.</li>
+        <li>Owner: il primo client che stabilisce una connessione WebSocket. Il sistema deve riconoscerlo per abilitare i pulsanti di controllo, garantendo che un solo utente gestisca l'evoluzione del gioco.</li>
+        <li>Interconnessione: il passaggio da un sistema locale a uno distribuito richiede che i componenti (<i>lifectrl</i> e <i>guiserver</i>) abbiano nomi logici e comunichino tramite messaggi invece di invocazioni dirette.</li>
+    </ul>
+</div>
 
  
 
 <h2>Problem analysis</h2>
+<div class="remark">
+	Mi concentro realizzazione di un sistema distribuito composto da componenti autonomi.
+	<ul>
+        <li>Non potendo usare chiamate a metodi tra Java e Browser, bisogna definire un <i>Vocabolario di interazione</i>.</li>
+        <li>Vocabolari distinti:
+            <ul>
+                <li>tra Server e Browser (Interconnessione B): stringhe semplici o JSON (es. <i>cell(X,Y)</i>).</li>
+                <li>tra Applicazione e Server (Interconnessione A): messaggi formali IApplMessage (es. <i>msg(do, dispatch, ...)</i>).</li>
+            </ul>
+        </li>
+    </ul>
+    <img src="./img/metamodello_componenti.png" alt="Metamodello componenti attivi" width="45%">
+</div>
  
 
 <h2>Test plans</h2> 

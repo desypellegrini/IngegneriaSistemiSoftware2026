@@ -28,13 +28,15 @@ dependencies {
     implementation name: '2p301'
     implementation name: 'unibo.basicomm23-1.0'
     
-    implementation 'io.javalin:javalin-bundle:6.1.3'
-    
     /* conway ******************************* */
-    //implementation name: 'conway26Java-1.0'
+    implementation name: 'conway26Java-1.0'
 
     /* javalin ******************************* */
 	implementation 'io.javalin:javalin-bundle:6.1.3'
+
+   /* protoectors ******************************* */
+    implementation name: 'protoactor26-1.0'
+
 }
 
 sourceSets {
@@ -63,7 +65,7 @@ eclipse {
 
 application {
     //Define the main class for the application.
-    mainClassName    = 'conway26appl.MainConwayGui'
+    mainClassName    = 'conwayGuiPageServer.MainConwayGui'
 }
 
 jar {

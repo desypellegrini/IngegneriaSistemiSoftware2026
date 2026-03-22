@@ -4,13 +4,13 @@
 
 FROM eclipse-temurin:17.0.5_8-jre-focal AS builder
 ## ADD extracts the tar
-ADD ../build/distributions/conway26JavaGuiHtml-1.0.tar /
-WORKDIR /conway26JavaGuiHtml-1.0/bin
+ADD ../build/distributions/conway26GuiHtml-1.0.tar /
+WORKDIR /conway26GuiHtml-1.0/bin
 
 ## RUN apt-get update -y
 
 
-CMD ["bash", "conway26JavaGuiHtml"]
+CMD ["bash", "conway26GuiHtml"]
 
 ## 0) docker rmi gui26html:1.0
 ## 1) gradlew distTar
