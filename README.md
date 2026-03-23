@@ -18,5 +18,5 @@
  ### Sistemi come servizi
  * ...
  ### Sistema ConwayLife con pagine HTML
- * [ConwayLife Sprint3](ConwayLife/Sprint3/conway26GuiHtml): evoluzione del sistema in locale
-   usando una pagina HTML come dispositivo di I/O. <i>Distribuzione</i>: Docker yaml.
+ * [ConwayLife Sprint3](ConwayLife/Sprint3): evoluzione del sistema in locale
+   usando una pagina HTML come dispositivo di I/O. <i>Distribuzione</i>: Docker yaml. <i>Documentazione</i>: [conway26JavaGuiHtml_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26JavaGuiHtml_v0.html)
