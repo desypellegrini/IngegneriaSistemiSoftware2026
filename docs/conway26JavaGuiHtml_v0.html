@@ -119,6 +119,16 @@ Realizzare l'evoluzione del sistema verso un'architettura basata su servizi, per
  
 
 <h2>Deployment</h2> 
+<div class="remark">
+	La procedura seguita è basata su Docker e prevede:
+	<ol>
+		<li>Generazione dell'archivio distribuibile tramite il comando <i>gradlew distTar</i>.</li>
+		<li>Creazione dell'immagine Docker personalizzata: <i>docker build -t gui26html:1.0 .</i>.</li>
+		<li>Esecuzione del container con mappatura della porta 8080: <i>docker run -p 8080:8080 gui26html:1.0</i>.</li>
+	</ol>
+	Per la versione esterna, utilizzo Docker Compose per coordinare i diversi nodi del sistema (Logica e GUI) tramite il file conway26Guihtml.yaml, avviabile con il comando:
+	<i>docker-compose -f conway26Guihtml.yaml up</i>
+</div>
 
  
 <h2>Maintenance</h2> 
