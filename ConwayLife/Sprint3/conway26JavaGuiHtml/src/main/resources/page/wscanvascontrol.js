@@ -50,8 +50,6 @@ socketToGui.onclose = () => {
 };
 
 socketToGui.onmessage = (event) => {
-    console.log("Messaggio ricevuto dal server:", event.data); // LOG DI DEBUG
-
     if(event.data.startsWith("ID:")){
         pageId = event.data.split(":")[1];
         handleOwnerLogic(pageId); 
@@ -60,14 +58,18 @@ socketToGui.onmessage = (event) => {
 
     if(event.data.startsWith("msg")){
         const parts = event.data.split(",");
-        // Il contenuto è il 5° elemento (indice 4)
         let content = parts[4].trim();
 
         if(content.includes("[[")) {
-            // Ripristina le virgole e disegna
-            const validJson = content.replace(/;/g, ",");
-            const grid = JSON.parse(validJson);
-            requestAnimationFrame(() => draw(grid));
+            // Sostituisce i punti e virgola con virgole e rimuove gli apici singoli
+            let validJson = content.replace(/;/g, ",").replace(/'/g, "");
+            try {
+                const grid = JSON.parse(validJson);
+                // Forza il disegno della griglia aggiornata
+                requestAnimationFrame(() => draw(grid));
+            } catch(e) {
+                console.error("Errore parsing griglia:", e);
+            }
         }
     }
 };
@@ -82,15 +84,15 @@ socketToGui.onclose =  function(event){
 // --- DISEGNO (L'illusione visiva) ---
 function draw(grid) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-	const currentRows = grid.length;
-	const currentCols = grid[0].length;
-	console.log(" " + currentRows + " " + currentCols)
-    for (let r = 0; r < currentRows; r++) {
-        for (let c = 0; c < currentCols; c++) {
-			ctx.fillStyle = grid[r][c] ? "#ff0000" : "#00ff00";
-			ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
-       }
+    for (let r = 0; r < grid.length; r++) {
+        for (let c = 0; c < grid[r].length; c++) {
+            ctx.strokeStyle = "#333"; // Colore del bordo
+            ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            if (grid[r][c]) {
+                ctx.fillStyle = "#ff0000";
+                ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+        }
     }
 }
 

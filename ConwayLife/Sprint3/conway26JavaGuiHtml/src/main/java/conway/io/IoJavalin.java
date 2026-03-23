@@ -118,6 +118,7 @@ public class IoJavalin {
  */      
         app.ws("/eval", ws -> {
         	ws.onConnect(ctx -> {
+        		allConns.add(ctx);
         	    CommUtils.outmagenta("Nuova connessione WebSocket stabilita");
         	    // Non assegniamo l'owner qui, aspettiamo che la pagina si dichiari pronta
         	});

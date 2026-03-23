@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>conway26JavaGuiHtmlInt_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>ConwayLife Sprint3 - versione integrata</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+<b>Goal: </b>Realizzazione in Java del
+<a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.6'>GAME OF LIFE DI CONWAY</a> con GUI del gioco realizzata come una pagina Web.
+ 
+<h2>Requirements</h2>
+
+ 
+<!-- <div class="remark"> -->
+<ol class="req-list">
+	<li>
+		<span>dotare il gioco Life di una pagina HTML come dispositivo di I/O</span>
+	</li>
+	<li>	
+		<span>la pagina deve costituire un componente interno alla applicazione secondo la architettura riportata in 
+			<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#subsection.8.2.3" target="_blank" rel="noopener noreferrer">IoJavalin integrato</a>
+		</span>
+	</li>
+	<li>
+		<span>il gestore del gioco sarà l’utente che ha aperto per primo (owner) una pagina HTML collegata al gioco. In altre
+			parole, solo la pagina dell’owner avrà pulsanti di comando START/STOP/CLEAN/EXIT attivi</span>
+	</li>
+	<li>
+		<span>la pagina HTML deve essere aggiornata in modo automatico man mano il gioco procede</span>
+	</li>
+	<li>
+		<span>un utente non owner che si collega mentre il gioco è in corso, dovrebbe vedere lo stato attuale della griglia in
+			modo corretto</span>
+	</li>
+	<li>
+		<span>il deployment del gioco deve avvenire mediante Docker</span>
+	</li>
+</ol>
+
+<h2>Requirement analysis</h2>
+<p>La logica del gioco è già stata analizzata nello <a href="https://ariannabuffoni.github.io/IngegneriaSistemiSoftware2026/conway26Java_v0.html" target="_blank" rel="noopener noreferrer">Sprint1</a>. 
+	Utiliziamo quindi il risultato ottenuto, che costituisce un sottosistema funzionante, come punto di partenza per questo nuovo lavoro.</p>
+
+<h2>Problem analysis</h2>
+<p>
+	Analizzo l'architettura del sistema che voglio realizzare, riportata in questo modello informale:<br/>
+	<img src="./img/IoJavalin_integrato.png" alt="foto" width="50%" height="50%">
+</p>
+<p>
+	A livello strutturale, oltre alle classi già realizzate, noto che OutInWs dovrà implementare l'interfaccia 
+	<a href="https://github.com/ariannabuffoni/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint1/conway26Java/src/main/java/conway/domain/IOutDev.java" target="_blank" rel="noopener noreferrer">IOutDev</a>
+	già definita e incapsulare il server IoJavalin per comunicare con la
+	<a href="https://github.com/ariannabuffoni/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/resources/page/ConwayInOutPage.html" target="_blank" rel="noopener noreferrer">pagina html</a>
+	via browser.<br/>
+	La funzione di questa classe è di fare da mediatore tra il LifeController che si occupa della gestione dell'evoluzione del gioco e il browser che si occupa di presentare all'utente una rappresentazione grafica del gioco.
+	Sarà necessario un metodo setController per andare ad iniettare dentro a OutInWs un riferimento al LifeController.
+</p>
+<p>
+	A livello di interazione, è necessario andare a definire un protocollo di interazione tra OutInWs e la pagina web, in modo che i messaggi utilizzino lo stesso linguaggio 
+	e che quindi entrambi possano essere in grado di interpretare correttamente il payload. <br/>
+	Utilizzerò dei messaggi che seguono la struttura dettata da 
+	<a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#subsection.9.2.1" target="_blank" rel="noopener noreferrer">IApplMessage</a>
+	, ovvero qualcosa del tipo msg( MSGID, MSGTYPE, SENDER, RECEIVER, CONTENT, SEQNUM ). <br/>
+	Andando a discriminare in base al contenuto del messaggio posso decidere quali operazioni far eseguire a OutInWs.
+	In particolare, i tipi di messaggi che il client può inviare (con relative azioni da parte del server):
+	<ul>
+		<li>
+			msg( eval, dispatch, SENDER, lifectrl, start, 0 ), inviato quando il cliente clicca sul bottone "START" e farà partire il gioco, 
+			ovvero il server chiamerà la funzione onStart() di LifeController
+		</li>
+		<li>
+			msg( eval, dispatch, SENDER, lifectrl, stop, 0 ), inviato quando il cliente clicca sul bottone "STOP" e farà fermare il gioco, 
+			ovvero il server chiamerà la funzione onStop() di LifeController
+		</li>
+		<li>
+			msg( eval, dispatch, SENDER, lifectrl, clear, 0 ), inviato quando il cliente clicca sul bottone "CLEAR" e pulirà la griglia il gioco, 
+			ovvero il server chiamerà la funzione onClear() di LifeController
+		</li>
+		<li>
+			msg( eval, dispatch, SENDER, lifectrl, exit, 0 ), inviato quando il cliente clicca sul bottone "EXIT" e farà interrompere la connessione, 
+			ovvero il server chiamerà la propria funzione close()
+		</li>
+		<li>
+			msg( eval, dispatch, SENDER, lifectrl, cell(x,y), 0 ), inviato quando il cliente clicca su una cella (riporterà quindi x e y relativi) e ne cambierà lo stato, 
+			ovvero il server chiamerà la funzione switchCellStatus(x,y) di LifeController
+		</li>
+	</ul>
+
+	Il server potrà inviare messaggi al client per comunicare la nuova configurazione della griglia o altri messaggi attraverso i metodi display.
+
+</p>
+<p>
+	Distribuendo via server Web la GUI del gioco si pone il problema della gestione di più utenti contemporaneamente. 
+	In base ai requisiti solo il primo utente che si connette deve essere in grado di interagire e modificare la griglia, mentre tutti gli altri sono passivi e possono solo osserevare l'evoluzione.<br/>
+	Per fare ciò, conservo lato server il primo che si connette e permetto solo a lui di interagire con il LifeController, 
+	tutti gli altri vedranno solo l'evoluzione del gioco senza poter interagire (se provano ad interagire riceveranno un messaggio "Non sei l'owner!"). <br/>
+
+</p>
+<p>
+	In base a queste osservazioni ho sviluppato il seguente 
+	<a href="https://github.com/ariannabuffoni/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway/io/OutInWs.java" target="_blank" rel="noopener noreferrer">codice per OutInWs</a>.<br/>
+</p>
+
+
+<h2>Test plans</h2> 
+
+
+
+<h2>Project</h2> 
+ 
+ 
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:100%;text-align:left;color:white">
+By Arianna Buffoni email: arianna.buffoni@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fototessera_badge.jpg" alt="foto" width="8%" height="8%">
+GIT repo: https://github.com/ariannabuffoni/IngegneriaSistemiSoftware2026.git
+</div> 
+</body>
+</html>
