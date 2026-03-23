@@ -46,7 +46,6 @@ public class OutInGuiInteraction implements IOutDev, IObserver{
 	    try {
 	        String msgId = msg.startsWith("[[") ? "gridUpdate" : "eval";
 	        
-	        // Sostituiamo le virgole con punti e virgola per "ingannare" il parser del prof
 	        String safeMsg = msg.replace(",", ";");
 	        
 	        IApplMessage cmdmsg = CommUtils.buildDispatch(name, msgId, safeMsg, "guiserver");
