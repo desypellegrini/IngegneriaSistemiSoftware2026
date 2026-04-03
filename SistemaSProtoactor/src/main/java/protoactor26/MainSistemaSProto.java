@@ -1,13 +1,13 @@
 package protoactor26;
 
 public class MainSistemaSProto {
-	public static void main(String[] args) {
-        // Avvio il contesto (che include il server Javalin) sulla porta 8070
-        ProtoActorContext26 ctx = new ProtoActorContext26("ctxCalcolo", 8070);
+    public static void main(String[] args) {
+        // Usiamo la porta 8050 
+        ProtoActorContext26 ctx = new ProtoActorContext26("ctx8050", 8050);
         
-        // Creo l'attore e lo registro col nome "pacalculator"
-        new ActorEval("pacalculator", ctx);
+        // Creiamo l'attore di calcolo "sistemaS"
+        new ActorEval("sistemaS", ctx);
         
-        System.out.println("SISTEMA A PROTOATTORI PRONTO SULLA PORTA 8070");
+        System.out.println("SISTEMA PRONTO SULLA PORTA 8050");
     }
 }
