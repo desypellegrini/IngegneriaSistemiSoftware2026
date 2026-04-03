@@ -19,7 +19,8 @@
    usando una pagina HTML come dispositivo di I/O. <i>Distribuzione</i>: Docker yaml. <i>Documentazione</i>:
    * Soluzione Esterna: [conway26JavaGuiHtml_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26JavaGuiHtml_v0.html)
    * Soluzione Integrata: [conway26JavaGuiHtml_int_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26JavaGuiHtml_int_v0.html)
-  
+
+  <br>
 
  * [SistemaSJavalin Project](AService/Sprint1/SistemaSJavalin)
 
