@@ -1,43 +1,21 @@
 body {
     padding: 20px;
-    background-color: #1a1a1a; /* Sfondo scuro per tutta la pagina */
-    color: #00ff00; /* Testo verde "Matrix" */
-    font-family: 'Courier New', monospace;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    background-color: #e6ffe6;
 }
-
-canvas {
-    border: 2px solid #333;
-    background-color: #000; /* Canvas nero */
-    cursor: crosshair;
-    box-shadow: 0 0 20px rgba(0,255,0,0.1);
-    margin-bottom: 20px;
-}
-
-.controls {
-    margin: 20px;
-    padding: 10px;
-    border: 1px solid #00ff00;
-}
-
-button {
-    background: transparent;
-    border: 1px solid #00ff00;
-    color: #00ff00;
-    padding: 5px 10px;
-    cursor: pointer;
-    margin: 0 5px;
-}
-
-button:disabled {
-    border-color: #333;
-    color: #333;
-    cursor: not-allowed;
-}
-
-#status {
-    font-size: 0.8em;
-    margin-bottom: 10px;
-}
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(20, 15px);
+            grid-gap: 1px;
+            justify-content: left;
+            margin-top: 20px;
+        }
+        .cell {
+            width: 15px;
+            height: 15px;
+            text-align: center;
+            line-height: 15px;
+            font-weight: bold;
+            color: white;
+        }
+        .live { background-color: #dc3545; }
+        .dead { background-color: #28a745  }

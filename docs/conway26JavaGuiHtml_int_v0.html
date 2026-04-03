@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>conway26JavaGuiHtml_int_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>ConwayLife Sprint3</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+Realizzazione in Java del <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.6'>GAME OF LIFE DI CONWAY</a>, con GUI del gioco mediante pagina Web.
+
+<h2>Requirements</h2>
+
+<div class="remark">
+	<ol>
+		<li>
+			Realizzare una versione in Java del gioco Life di Conway, come gioco zero-player. Il gioco consiste nell’introdurre una Griglia di Celle il cui stato (cella ‘viva’ o cella ‘morta’) evolve come stabilito dallle regole di ConwayLife.
+		</li>
+		<li> L’utente umano deve poter:
+			<ul>
+				<li>specificare la configurazione iniziale della griglia del gioco</li>
+				<li>vedere l’evoluzione del gioco in forma opportuna (si veda <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.6.3'>Problema della vista del gioco</a>)</li>
+				<li>fermare e far ripartire l’evoluzione del gioco</li>
+				<li>pulire (a gioco fermo) la configurazione della griglia del gioco</li>
+			</ul>
+		</li>
+		<li> In particolare, il committente desidera che la vista del gioco (e la configurazione iniziale) sia realizzata mediante una pagina HTML, precisando che:
+			<ul>
+				<li>la pagina deve costituire un componente che si relaziona con l’applicazione secondo l'architettura riportata in <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#subsection.8.2.3'>IoJavalin integrato</a></li>
+				<li>il gestore del gioco sarà l’utente che ha aperto per primo (owner) una pagina HTML collegata al gioco. In altre parole, solo la pagina dell’owner avrà pulsanti di comando START/STOP/CLEAN/EXIT attivi</li>
+				<li>la pagina HTML deve essere aggiornata in modo automatico man mano il gioco procede</li>
+				<li>un utente non owner che si collega mentre il gioco è in corso, dovrebbe vedere lo stato attuale della griglia in modo corretto</li>
+				<li>il deployment del gioco deve avvenire mediante Docker</li>
+			</ul>
+		</li>
+	</ol>
+
+</div>
+ 
+
+<h2>Requirement analysis</h2>
+<div class="remark">
+	E’ opportuno riportare qui lo scenario architetturale menzionato nei requisiti:<br>
+	<img src="./img/integrata.png" alt="Architettura Integrata" width="30%"><br>
+	E’ necessario avvalersi di un server che deve svolgere due ruoli diversi. Il componente che utilizza il server viene indicato col nome iojavalin. <br>
+
+	Nel caso di Javalin integrato, iojavalin è parte di un oggetto (<a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway/io/OutInWs.java" target="_blank">OutInWs</a>) che implementa IOutDev e riceve da questo
+un riferimento all’oggetto locale LifeController.<br>
+iojavalin funge da abilitatore delle comunicazioni da LifeController alla pagina e da attivatore di metodi di
+LifeController quando riceve (via WS) comandi dalla pagina.<br>
+Il lancio della applicazione su un computer:
+<ol>
+	<li>ermette di attivare un browser sullo stesso computer e digitare localhost:8080 (puntando il browser verso
+l’indirizzo di loopback)</li>
+<li>oppure attiva in modo automatico anche un browser locale così che la pagina HTML possa comparire in modo
+automatico sullo schermo</li>
+</ol>
+Il committente indica il primo comportamento, almeno per il primo prototipo del sistema. In seguito si potrà discutere
+sulla seconda possibilità.<br>
+
+Come da requisito, la pagina mostra in ogni caso i pulsanti, ma un click su questi provoca effetti solo nel
+caso in cui la pagina sia owner del gioco.<br>
+Per quanto riguarda i piani di test, al momento, sulla base dei requisiti, possiamo limitarci a dire quanto segue:
+<ul>
+	<li>attivo l’applcazione su un computer</li>
+	<li>sullo stesso computer, attivo due browser su localhost:8080 e verifico che solo uno dei due riesce a controllare
+il gioco</li>
+</ul>
+
+</div>
+
+ 
+
+<h2>Problem analysis</h2>
+<div class="remark">
+	A differenza della <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/tree/main/ConwayLife/Sprint3/conway26JavaGuiHtml" target="_blank">versione esterna</a>, qui non realizziamo un sistema distribuito su rete, ma un sistema monolitico in cui:
+    <ol>
+        <li>l'erogazione della pagina HTML (GUI) e la logica applicativa risiedono nello stesso nodo computazionale (stessa JVM)</li>
+        <li>il framework Javalin non è un servizio separato, ma costituisce il cuore di un nuovo dispositivo di I/O interno all'applicazione</li>
+    </ol>
+    Le interazioni tra i componenti non avvengono tramite messaggi inviati su rete tra due processi diversi, ma tramite interazioni locali (chiamate a metodi) mediate dal componente iojavalin.<br>
+
+    <ul>
+        <li><i>Comunicazioni pagina-server (Websocket)</i>:<br>
+            nonostante il server sia integrato, la comunicazione con il browser avviene comunque via WebSocket sulla porta 8080. 
+            La pagina invia stringhe che vengono interpretate dal server per attivare i metodi del <i>LifeController</i>.
+        </li>
+        <li><i>Comunicazioni server-applicazione</i>:<br>
+            Il componente <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway/io/OutInWs.java" target="_blank">OutInWs.java</a> agisce come Adapter:
+            <ul>
+                <li>riceve i comandi dalla WebSocket (START/STOP/CLEAR)</li>
+                <li>chiama direttamente i metodi dell'interfaccia <i>GameController</i> sul <i>LifeController</i> locale</li>
+                <li>essendo un <i>IOutDev</i>, riceve gli aggiornamenti della griglia e li spinge sulla WebSocket verso il browser</li>
+            </ul>
+        </li>
+    </ul>
+
+</div>
+ 
+
+<h2>Test plans</h2> 
+<div class="remark">
+    Il piano di test prevede la verifica della corretta interazione tra i componenti tramite:
+    <ul>
+		<li>verifica dell'inizializzazione: verificare che all'avvio del <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway26appl/MainConwayGui.java" target="_blank">MainConwayGui</a>, il server Javalin parta correttamente sulla porta 8080 e riceva il riferimento al LifeController locale.</li>
+		<li>test di reattività: apertura del browser su <i>localhost:8080</i> e verifica che i comandi inviati dalla GUI attivino immediatamente i metodi onStart/onStop del controller senza latenze di rete inter-processo.</li>
+        <li>test multi-sessione (owner): si aprono due browser per confermare che il componente <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway/io/OutInWs.java" target="_blank">OutInWs</a> gestisca correttamente il <i>firstCaller</i>, ignorando i comandi dei non-owner nonostante risiedano tutti nello stesso nodo.</li>
+    </ul>
+</div>
+
+
+<h2>Project</h2> 
+<div class="remark">
+	<ol>
+		<li>Si utilizza una rappresentazione granulare basata sul DOM gestita in 
+    <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/resources/page/wscontrol.js" target="_blank">wscontrol.js</a>:
+    <ul>
+        <li>la griglia viene costruita dinamicamente tramite <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/resources/page/iomap.js" target="_blank">iomap.js</a>. Ogni cella è un elemento div che può essere aggiornato singolarmente tramite messaggi cell(x,y)</li>
+        <li>il file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/resources/page/wscontrol.js" target="_blank">wscontrol.js</a> gestisce la logica di rete WebSocket puntando a localhost:8080/eval</li>
+    </ul></li>
+
+	<li>Il file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway/io/OutInWs.java" target="_blank">OutInWs.java</a> costituisce il cuore dell'integrazione:
+    <ul>
+        <li>implementa IOutDev e gestisce direttamente l'istanza del server Javalin</li>
+        <li>non necessita di un protocollo di registrazione esterno (come setcontroller via rete), poiché riceve il riferimento al LifeController locale durante la fase di inizializzazione nel main</li>
+    </ul></li>
+
+	<li>La configurazione del sistema avviene nel <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway26appl/MainConwayGui.java" target="_blank">MainConwayGui.java</a>:
+    <ul>
+        <li>il Main crea l'oggetto <i>Life</i>, l'oggetto <i>OutInWs</i> e il <i>LifeController</i>, iniettando il controller nel server tramite un metodo setController locale</li>
+        <li>garantisce che il server sia immediatamente pronto a inoltrare i comandi START/STOP della pagina Web alla logica sottostante</li>
+    </ul></li>
+
+	<li>La gestione della multi-utenza è incapsulata in OutInWs.java:
+    <ul>
+        <li>il server memorizza la prima connessione WebSocket come owner</li>
+        <li>ogni cambiamento di stato della griglia viene notificato a tutti i client connessi tramite una scansione della lista delle sessioni attive, garantendo la sincronizzazione della vista per ogni utente collegato.</li>
+    </ul></li>
+</ol>
+
+</div>
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+<div class="remark">
+	La procedura seguita è basata su Docker e prevede:
+	<ol>
+		<li>Generazione dell'archivio distribuibile tramite il comando <i>gradlew distTar</i>.</li>
+		<li>Creazione dell'immagine Docker personalizzata: <i>docker build -t gui26html:1.0 .</i>.</li>
+		<li>Esecuzione del container con mappatura della porta 8080: <i>docker run -p 8080:8080 gui26html:1.0</i>.</li>
+	</ol>
+</div>
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:60%;text-align:left;color:white">
+By Desirée Pellegrini email: desiree.pellegrini@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fotodesy.jpeg" alt="emiglio" width="15%" height="15%">
+GIT repo: https://github.com/desypellegrini/IngegneriaSistemiSoftware2026.git 
+</div> 
+</body>
+</html>

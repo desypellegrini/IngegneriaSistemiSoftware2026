@@ -20,10 +20,7 @@
 <div class="body">  
 
 <h2>Introduction</h2>
-Realizzare l'evoluzione del sistema verso un'architettura basata su servizi, per dotare il gioco <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.6'>GAME OF LIFE DI CONWAY</a>
-  di una GUI HTML come dispositivo di I/O, 
-    trasformando il sistema in un componente distribuito capace di interagire con il mondo esterno 
-    tramite protocolli di rete (WebSockets e HTTP).
+Realizzazione in Java del <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#chapter.6'>GAME OF LIFE DI CONWAY</a>, con GUI del gioco mediante pagina Web.
 
 <h2>Requirements</h2>
 
@@ -32,14 +29,20 @@ Realizzare l'evoluzione del sistema verso un'architettura basata su servizi, per
 		<li>
 			Realizzare una versione in Java del gioco Life di Conway, come gioco zero-player. Il gioco consiste nell’introdurre una Griglia di Celle il cui stato (cella ‘viva’ o cella ‘morta’) evolve come stabilito dallle regole di ConwayLife.
 		</li>
-		<li> Il committente fissa i seguenti requisiti:
+		<li> L’utente umano deve poter:
 			<ul>
-				<li>dotare il gioco di una pagina HTML come dispositivo di I/O</li>
-				<li>la pagina deve costituire un componente esterno alla applicazione secondo la architettura riportata in IoJavalin esterno alla applicazione</li>
+				<li>specificare la configurazione iniziale della griglia del gioco</li>
+				<li>vedere l’evoluzione del gioco in forma opportuna (si veda <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.6.3'>Problema della vista del gioco</a>)</li>
+				<li>fermare e far ripartire l’evoluzione del gioco</li>
+				<li>pulire (a gioco fermo) la configurazione della griglia del gioco</li>
+			</ul>
+		</li>
+		<li> In particolare, il committente desidera che la vista del gioco (e la configurazione iniziale) sia realizzata mediante una pagina HTML, precisando che:
+			<ul>
+				<li>la pagina deve costituire un componente che si relaziona con l’applicazione secondo l'architettura riportata in <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#subsection.8.2.4'>IoJavalin esterno alla applicazione</a></li>
 				<li>il gestore del gioco sarà l’utente che ha aperto per primo (owner) una pagina HTML collegata al gioco. In altre parole, solo la pagina dell’owner avrà pulsanti di comando START/STOP/CLEAN/EXIT attivi</li>
 				<li>la pagina HTML deve essere aggiornata in modo automatico man mano il gioco procede</li>
 				<li>un utente non owner che si collega mentre il gioco è in corso, dovrebbe vedere lo stato attuale della griglia in modo corretto</li>
-				<li>opzionalmente: la pagina HTML deve indicare se il gioco continua anche nel caso di griglia vuota o di configurazione tabile</li>
 				<li>il deployment del gioco deve avvenire mediante Docker</li>
 			</ul>
 		</li>
@@ -50,69 +53,111 @@ Realizzare l'evoluzione del sistema verso un'architettura basata su servizi, per
 
 <h2>Requirement analysis</h2>
 <div class="remark">
-	Il sistema deve comportarsi come un Server HTTP (per fornire la pagina) e come un Server WebSocket (per lo scambio dati bidirezionale in tempo reale).
-	<ul>
-		<li>
-			<a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/tree/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int"target="_blank"><i>Versione Integrata</i></a>: Javalin e LifeController nello stesso processo (comunicazione diretta).
-		</li>
-		<li><a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/tree/main/ConwayLife/Sprint3/conway26JavaGuiHtml"target="_blank"><i>Versione Esterna</i></a>: Javalin isolato che comunica via rete con la logica (architettura a microservizi).</li>
-	</ul>
-	Il sistema deve gestire lo stato della connessione. Solo il primo client che invia il messaggio ready (o canvasready) viene registrato dal server come <i>Owner</i>, ottenendo i privilegi di invio comandi.<br>
-	Ogni cambiamento del modello Java deve essere pushato a tutti i client connessi senza richiesta esplicita (tecnologia WebSocket).
-	
+	E’ opportuno riportare qui lo scenario architetturale menzionato nei requisiti:<br>
+	<img src="./img/esterna.png" alt="Architettura Esterna" width="30%"><br>
+	E’ necessario avvalersi di un server che deve svolgere due ruoli diversi. Il componente che utilizza il server viene indicato col nome iojavalin. <br>
+
+	Nel caso di Javalin esterno, <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway/io/IoJavalin.java"target="_blank">IoJavalin</a> è parte di un componente (un servizio) esterno alla applicazione che deve
+relazionarsi con il <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway26appl/LifeControllerAdhoc.java" target="_blank">LifeController</a> applicativo mediante messaggi.<br>
+L' interazione applicazione-servizio può avvenire in due modi:
+<ol>
+	<li>utlizzando una connessione via Websocket sulla porta 8080</li>
+	<li>utilizzando un diverso protocollo, ad esempio MQTT</li>
+</ol>
+Il committente ha già indicato il primo comportamento, almeno per il prototipo iniziale del sistema. In seguito si potrà
+discutere sulla seconda possibilità.<br>
+Come da requisito, la pagina mostra in ogni caso i pulsanti, ma un click su questi provoca effetti solo nel
+caso in cui la pagina sia owner del gioco.<br>
+Per quanto riguarda i piani di test, al momento, sulla base dei requisiti, possiamo limitarci a dire quanto segue:
+<ul>
+	<li>attivo l’applcazione su un computer</li>
+	<li>sullo stesso computer, attivo due browser su localhost:8080 e verifico che solo uno dei due riesce a controllare
+il gioco</li>
+</ul>
+
 </div>
 
  
 
 <h2>Problem analysis</h2>
 <div class="remark">
-	Analizzo l'architettura del sistema che voglio realizzare, basandomi sui due modelli discussi:
+	L'obiettivo è quello di realizzare un sistema distribuito, in cui:
 	<ol>
-        <li><b>Architettura Integrata:</b><br>
-			<img src="./img/integrata.png" alt="Architettura Integrata" width="30%"><br>
-			A livello strutturale, <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway/io/OutInWs.java"target="_blank">OutInWs.java</a>
- deve implementare l'interfaccia IOutDev e incapsulare il server IoJavalin per comunicare con la pagina HTML via browser. 
-			La funzione di questa classe è di fare da mediatore tra il LifeController e il browser. 
-			Sarà necessario un metodo setController per iniettare dentro a OutInWs un riferimento al LifeController.<br>
-			Di seguito il main: <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway26appl/MainConwayGui.java"target="_blank">MainConwayGui.java</a>.
-		
-		</li>
-        <li><b>Architettura Esterna:</b><br>
-			<img src="./img/esterna.png" alt="Architettura Esterna" width="30%"><br>
-			In questa variante, il server <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway/io/IoJavalin.java"target="_blank">IoJavalin.java</a> è un componente esterno autonomo. 
-			A livello strutturale, l'applicazione comunica con il server tramite l'adattatore <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway26appl/OutInGuiInteraction.java"target="_blank">OutInGuiInteraction.java</a> (che implementa IOutDev). 
-			La separazione fisica richiede una gestione dei messaggi via rete tra la logica Java e il server che eroga la GUI.
-    </ol>
-	Definisco un protocollo di interazione in modo che i messaggi utilizzino lo stesso linguaggio. Utilizzerò messaggi che seguono la struttura di IApplMessage: msg( MSGID, MSGTYPE, SENDER, RECEIVER, CONTENT, SEQNUM ).<br>
-	Distribuendo la GUI via Web si pone il problema della gestione di più utenti. In base ai requisiti, solo il primo utente connesso (owner) può interagire con la griglia. Il server memorizza la prima connessione e permette solo a quella di inviare comandi al LifeController. Tutti gli altri utenti sono spettatori passivi: se provano a interagire, il sistema ignora il comando o restituisce un messaggio di errore ("Non sei l'owner!").
+		<li>Una parte del sistema (l'erogazione di una pagina HTML, in breve GUI) è del tutto nuova (<b>Job1</b>) rispetto allo Sprint 2.</li>
+		<li>Una parte del sistema (l'applicazione) è già disponibile e deve essere solo <i>adattata</i> a interagire con la GUI (<b>Job2</b>).</li>
+	</ol>
+	Le due diverse parti costituiranno un Sistema solo se capaci di interagire in modo opportuno scambiando informazioni via rete in forma di messaggi. L'analisi si concentra sulla natura di questi messaggi per delineare le interazioni tra i componenti, che chiamiamo:
+	<ul>
+		<li><i>lifectrl</i>: l'applicazione Java.</li>
+		<li><i>guiserver</i>: il componente che include iojavalin.</li>
+	</ul>
+	Il sistema opera con un vincolo implicito: il livello applicativo utilizza la stessa connessione stabilita per collegarsi al server ai fini dell'output anche per ricevere l'input.<br><br>
+	Il <b>Job1</b> consiste nel realizzare un componente che funge da servizio erogatore di una pagina connessa via WebSocket. Suddividiamo l'analisi in:
+	<ul>
+		<li><i>Analisi delle comunicazioni pagina-server</i></li>
+		La pagina comunica con il guiserver usando stringhe la cui struttura sintattica permette al server di ricavare oggetti che rispettano l'interfaccia <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#subsection.9.2.1'>IApplMessage</a>:
+msg( MSGID, dispatch, SENDER, guiserver, CONTENT, SEQNUM ).<br>
+I messaggi inviati dalla pagina sono di tipo fire-and-forget (dispatch).<br>
+Il server assegna un nome alla pagina al momento della connessione (es. caller1). La prima pagina connessa viene identificata come owner.<br>
+I messaggi hanno la forma msg( do, dispatch, caller1, guiserver, CONTENT, SEQNUM ). Il payload CONTENT può essere: start, stop, clear o cell(x,y).<br>
+
+		<li><i>Analisi delle comunicazioni server-pagina</i></li>
+		Il server invia alla pagina comandi semplici che la pagina è capace di interpretare (codice Javascript):
+		<ul>
+			<li>ID:name: per assegnare il nome alla pagina.</li>
+			<li>cell(X,Y): per commutare una cella.</li>
+			<li>[[false,true,...]]: per specificare lo stato di una griglia globale (JSON).</li>
+		</ul>
+	</ul>
+	<br>
+	Il <b>Job2</b> consiste nella realizzazione di una implementazione di IOutDev ( <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway26appl/OutInGuiInteraction.java" target="_blank">OutInGuiInteraction.java</a> ) che stabilisca una connessione WebSocket con la GUI.<br>
+	All'avvio, il componente invia un dispatch con id="setcontroller" per informare il server della sua esistenza.<br>
+	OutInGuiInteraction implementa IObserver. I messaggi (ri)trasmessi dal guiserver vengono percepiti tramite il metodo update e inoltrati al <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway26appl/LifeControllerAdhoc.java" target="_blank">LifeControllerAdhoc.java</a>.<br>
+	Per aggiornare la GUI, il controller invia dispatch al guiserver:
+CommUtils.buildDispatch("lifectrl", "eval", CMDDISPLAY, "guiserver").<br>
+
 </div>
  
 
 <h2>Test plans</h2> 
+<div class="remark">
+    Il piano di test prevede la verifica della corretta interazione tra i componenti tramite:
+    <ul>
+        <li>test manuale dell'owner: apertura di più sessioni browser su <i>localhost:8080</i> per verificare che solo la prima connessione possa inviare comandi START/STOP, mentre le successive rimangano in stato di osservazione.</li>
+        <li>verifica messaggistica: utilizzo di <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway26appl/caller/CallerServerInteraction.java">CallerServerInteraction.java</a> per simulare l'invio di messaggi <i>dispatch</i> e validare la ricezione lato server.</li>
+    </ul>
+</div>
 
 
 <h2>Project</h2> 
 <div class="remark">
-	Il sistema realizzato è suddiviso in due configurazioni principali per una maggiore flessibilità architettonica.
-	<ul>
-		<li>Struttura della <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/tree/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int"target="_blank">soluzione integrata</a>:<br>
-			In questa versione, il server e la logica risiedono nello stesso nodo.
-			<ul>
-				<li>Il file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway/io/OutInWs.java"target="_blank">OutInWs.java</a> implementa IOutDev e gestisce il ciclo di vita di Javalin.</li>
-				<li>Il <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/java/conway26appl/MainConwayGui.java"target="_blank">MainConwayGui.java</a> inizializza il sistema e inietta il LifeController nel server tramite setController.</li>
-				<li>La cartella <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/resources/page"target="_blank">src/main/resources/page</a> contiene l'interfaccia HTML e il file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml_int/src/main/resources/page/wscontrol.js"target="_blank">wscontrol.js</a> per la gestione granulare delle celle.</li>
-			</ul>
-		</li>
-		<li>Struttura della <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/tree/main/ConwayLife/Sprint3/conway26JavaGuiHtml"target="_blank">soluzione esterna</a>:<br>
-			Questa versione realizza il requisito di componente esterno all'applicazione.
-			<ul>
-				<li>Il file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway/io/IoJavalin.java"target="_blank">IoJavalin.java</a> agisce come processo autonomo che espone la pagina Web.</li>
-				<li>Il file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway26appl/OutInGuiInteraction.java"target="_blank">OutInGuiInteraction.java</a> permette alla logica Java di inviare messaggi IApplMessage verso il server remoto.</li>
-				<li>Utilizza <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/resources/page/LifeIInOutCanvas.html"target="_blank">LifeIInOutCanvas.html</a> e <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/resources/page/wscanvascontrol.js"target="_blank">wscanvascontrol.js</a> per una rappresentazione grafica basata su coordinate.</li>
-			</ul>
-		</li>
-	</ul>
-	Il server mantiene un riferimento al primo WsContext che invia il messaggio di ready. I messaggi di controllo provenienti da altri contesti vengono scartati per garantire che solo l'Owner possa alterare lo stato del gioco.
+	<ol>
+	<li>Il file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/resources/page/wscanvascontrol.js" target="_blank">wscanvascontrol.js</a> interpreta i messaggi scambiati via WebSocket:
+    <ul>
+        <li>Utilizzo della Canvas HTML5 per la rappresentazione della griglia (20x20), permettendo aggiornamenti grafici fluidi tramite la funzione <i>draw(grid)</i>.</li>
+        <li>I comandi (START/STOP/CLEAR/cell) vengono inviati al server nel formato <i>msg(do, dispatch, SENDER, lifectrl, CMD, 0)</i>, dove <i>SENDER</i> è l'identificativo univoco assegnato dal server.</li>
+    </ul></li>
+    
+    <li>Il collegamento tra la logica Java e il mondo Web è gestito da <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway26appl/OutInGuiInteraction.java" target="_blank">OutInGuiInteraction.java</a>:
+    <ul>
+        <li>All'avvio, il componente esegue <i>informTheServerAboutController()</i>, inviando un dispatch setcontroller al <i>guiserver</i> per registrare la propria presenza.</li>
+        <li>Essendo un <i>IObserver</i>, percepisce i comandi provenienti dal browser (tramite il server) e li inoltra al LifeControllerAdhoc.</li>
+    </ul></li>
+    
+
+    <li>Per l'aggiornamento della griglia in GUI si è deciso di utilizzare esclusivamente messaggi di tipo dispatch (asincroni). <br>
+    Data la natura del gioco (evoluzione continua), l'uso di <i>request</i> risulterebbe troppo oneroso. Il server invia lo stato della griglia in formato JSON in modalità fire-and-forget a tutti i client connessi.
+</li>
+    
+    <li>Il requisito dell'utente owner è gestito all'interno di <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/ConwayLife/Sprint3/conway26JavaGuiHtml/src/main/java/conway/io/IoJavalin.java" target="_blank">IoJavalin.java</a>:
+    <ul>
+        <li>Il server mantiene una lista <i>allConns</i> di tutti i contesti WebSocket attivi.</li>
+        <li>Il primo utente che si connette viene memorizzato in <i>firstCaller</i> (Owner). Solo i messaggi provenienti da questo mittente vengono inoltrati al controller per l'esecuzione.</li>
+        <li>Tuttavia, grazie alla funzione <i>sendToAll(message)</i>, ogni aggiornamento della griglia prodotto dal gioco viene inviato a tutte le connessioni attive, permettendo ai non-owner di osservare lo stato corrente correttamente.</li>
+    </ul></li>
+    
+	</ol>
+
 </div>
 
 <h2>Testing</h2> 
@@ -126,7 +171,7 @@ Realizzare l'evoluzione del sistema verso un'architettura basata su servizi, per
 		<li>Creazione dell'immagine Docker personalizzata: <i>docker build -t gui26html:1.0 .</i>.</li>
 		<li>Esecuzione del container con mappatura della porta 8080: <i>docker run -p 8080:8080 gui26html:1.0</i>.</li>
 	</ol>
-	Per la versione esterna, utilizzo Docker Compose per coordinare i diversi nodi del sistema (Logica e GUI) tramite il file conway26Guihtml.yaml, avviabile con il comando:
+	Utilizzo Docker Compose per coordinare i diversi nodi del sistema (Logica e GUI) tramite il file conway26Guihtml.yaml, avviabile con il comando:
 	<i>docker-compose -f conway26Guihtml.yaml up</i>
 </div>
 

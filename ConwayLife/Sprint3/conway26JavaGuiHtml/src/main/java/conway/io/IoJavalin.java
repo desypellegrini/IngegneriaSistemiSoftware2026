@@ -5,13 +5,19 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import alice.tuprolog.Struct;
+import alice.tuprolog.Term;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.websocket.WsConnectContext;
+ 
 import io.javalin.websocket.WsContext;
 import io.javalin.websocket.WsMessageContext;
 import unibo.basicomm23.utils.CommUtils;
+import unibo.basicomm23.ws.WsConnection;
 import unibo.basicomm23.interfaces.IApplMessage;
+import unibo.basicomm23.interfaces.Interaction;
 import unibo.basicomm23.msg.ApplMessage;
 
 public class IoJavalin {
@@ -20,10 +26,14 @@ public class IoJavalin {
 	private WsMessageContext pageCtx, lifeCtrlCtx ;
 	private String name;
 	private String firstCaller        = null;
-	//private WsConnectContext ownerctx = null;
-	protected Vector<WsConnectContext> allConns = new Vector<WsConnectContext>();
+	private String controllerName     = null;
+	private String controllerProtocol = null;
+	private String controllerPort     = null;
+	private Interaction controllerconn= null;
+	
+	private Vector<WsConnectContext> allConns = new Vector<WsConnectContext>();
 
-	public IoJavalin(String name) {
+	public IoJavalin(String name) { //name="guiserver"
 		this.name = name;
         var app = Javalin.create(config -> {
         	// Configurazione globale del timeout per le connessioni (dalla versione 6.x in avanti)
@@ -65,111 +75,127 @@ public class IoJavalin {
 		    //ctx.result("Hello from Java!"));  //la forma più semplice di risposta
         }); 
         
-//        app.get("/greet/{name}", ctx -> {
-//            String pname = ctx.pathParam("name");
-//            ctx.result("Hello, " + pname + "!");
-//        }); //http://localhost:8080/greet/Alice
-//        
-//        app.get("/api/users", ctx -> {
-//            Map<String, Object> user = Map.of("id", 1, "name", "Bob");
-//            ctx.json(user); // Auto-converts to JSON
-//        });
         
-        /*
-         * Javalin v5+: Si passa solo la "promessa" (il Supplier del Future). 
-         * Javalin è diventato più intelligente: se il Future restituisce una Stringa, 
-         * lui fa ctx.result(stringa). Se restituisce un oggetto, lui fa ctx.json(oggetto).
-         * 
-         */
-//        app.get("/async", ctx -> {
-//        	ctx.future(() -> {
-//	        	// Creiamo il future
-//	            CompletableFuture<String> future = new CompletableFuture<>();
-//	            
-//	            // Eseguiamo il lavoro in un altro thread
-//	            new Thread(() -> { 
-//	                try {
-//	                    Thread.sleep(2000); // Simulazione calcolo pesante
-//	                    future.complete(name + " | Risultato calcolato asincronamente");
-//	                } catch (Exception e) {
-//	                    future.completeExceptionally(e);
-//	                }
-//	            });
-//	            
-//	            return future; // Restituiamo il future a Javalin
-//        	});
-//        });
-//        
-//        app.get("/async1", ctx -> {
-//            ctx.future(() -> CompletableFuture.supplyAsync(() -> {
-//                // Simuliamo l'operazione lenta
-//                try {
-//                    Thread.sleep(2000); 
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//                return name + " | Risultato calcolato con supplyAsync";
-//            }));
-//        });
-/*
+ /*
  * --------------------------------------------
  * Parte Websocket
  * --------------------------------------------
  */      
         app.ws("/eval", ws -> {
-        	ws.onConnect(ctx -> {
-        		allConns.add(ctx);
-        	    CommUtils.outmagenta("Nuova connessione WebSocket stabilita");
-        	    // Non assegniamo l'owner qui, aspettiamo che la pagina si dichiari pronta
-        	});
+            ws.onConnect(
+		        ctx -> { 
+	    	        int idAssegnato = pageCounter.incrementAndGet();
+	    	        String callerName = "caller"+idAssegnato;
+	     	        sendsafe(ctx, "ID:" + callerName);
+	     			if( firstCaller == null ) {
+	     				firstCaller = callerName;
+	     				//ownerctx    = ctx;
+     			}
+     			CommUtils.outmagenta("connected ..." + callerName);
+     			allConns.add(ctx);
+     			sendToAll("Nuova connessione " + allConns.size());
+     			 
+        // Ogni 20 secondi invia un segnale per "svegliare" i proxy
+//    	heartbeatTask = executor.scheduleAtFixedRate(
+//            () -> { if(ctx.session.isOpen()) sendsafe(ctx,"PING");}, //lambda // CommUtils.outcyan("PING");
+//                    20,  //QUANTO ASPETTARE LA PRIMA VOLTA. Se 0, il primo PING parte istantaneamente (inutile)
+//                    20,  //OGNI QUANTO RIPETERE
+//                    TimeUnit.SECONDS
+//            );
+		            });
              
-        	ws.onMessage(ctx -> {
-        	    String message = ctx.message();
-        	    try {
-        	        // 1. Gestione REGISTRAZIONE OWNER (Interconnessione B)
-        	        // La pagina invia "canvasready" dentro un IApplMessage o stringa pura
-        	        if (message.contains("canvasready")) {
-        	            if (firstCaller == null) {
-        	                firstCaller = "caller1"; // Il primo browser che carica diventa Owner
-        	                pageCtx = ctx; 
-        	                sendsafe(ctx, "ID:caller1");
-        	                CommUtils.outgreen(name + " | OWNER assegnato al Browser (caller1)");
-        	            } else {
-        	                int id = pageCounter.incrementAndGet();
-        	                sendsafe(ctx, "ID:caller" + id);
-        	                CommUtils.outmagenta(name + " | OSSERVATORE collegato (caller" + id + ")");
-        	            }
-        	            return; // Messaggio gestito, usciamo
-        	        }
-
-        	        // 2. Gestione PROTOCOLLO IApplMessage (Interconnessione A)
-        	        IApplMessage m = new ApplMessage(message);
-        	        
-        	        // Se ricevo la griglia (Safe JSON con ;) la mando a tutti
-        	        if (m.msgId().equals("gridUpdate")) {
-        	            // Inoltra il messaggio a TUTTI i browser connessi
-        	            for (WsConnectContext conn : allConns) {
-        	                if (conn.session.isOpen()) {
-        	                    sendsafe(conn, m.toString());
-        	                }
-        	            }
-        	        }
-        	        // Se ricevo comandi dall'Owner (caller1), li mando al Controller
-        	        else if (m.msgSender().equals("caller1")) {
-        	            if (lifeCtrlCtx != null) sendsafe(lifeCtrlCtx, m.toString());
-        	        }
-        	        // Se è il controller che si registra
-        	        else if (m.msgId().equals("setcontroller")) {
-        	            lifeCtrlCtx = ctx;
-        	            CommUtils.outblue(name + " | Controller logico agganciato.");
-        	        }
-
-        	    } catch (Exception e) {
-        	        // Se non è un IApplMessage e non è canvasready, logghiamo l'errore
-        	        CommUtils.outred(name + " | Errore parsing messaggio: " + message);
-        	    }
-        	});
+            ws.onMessage(ctx -> {
+                String message = ctx.message();     
+                   	//Il server 'parla'   IApplMessage
+	                IApplMessage m;
+	                try {
+	                	m = new ApplMessage(message);
+	                }catch( Exception e) {
+	                	CommUtils.outyellow(name + "receives a non ApplMessage:" + message);
+	                	return;
+	                }
+//                    CommUtils.outcyan(name + " | receives from:" + m.msgSender() + 
+//                    		" dest=" + m.msgReceiver() + " mid=" + m.msgId() +
+//                    		" pageCtx=" + (pageCtx!=null) + " allConns:" +allConns.size());
+  
+            		if(  m.msgSender().equals("unknown") && m.msgContent().contains("canvasready") && pageCtx==null) { 
+                      	pageCtx = ctx;  //memorizzo connessione pagina
+                    	CommUtils.outmagenta(name + " |  memorizzo pageCtx:" + pageCtx);
+                    	return;
+                    }		                	
+            		//if( m.msgSender().equals("lifectrl") ) {
+            			if( m.msgReceiver().equals(name) && m.msgId().contains("setcontroller")) { 
+            				//setcontroller(name,protocol,port)
+            				Struct payload = (Struct) Term.parse(m.msgContent());
+            				CommUtils.outcyan(name + " | payload=" + payload );
+            				if( payload != null ) {
+            					controllerName     = payload.getArg(0).toString();
+            					controllerProtocol = payload.getArg(1).toString();
+            					controllerPort     = payload.getArg(2).toString().replace("'", "");
+            				}
+            	        	CommUtils.outcyan(name + " | controllerPort=" + controllerPort );
+            	        	if( controllerPort.equals("0")) {
+	           		       	    lifeCtrlCtx = ctx; //memorizzo connessione controller
+	            	        	CommUtils.outmagenta(name + " |  memorizzo lifeCtrlCtx:" + lifeCtrlCtx );
+            	        	}else {
+            	        		CommUtils.outmagenta("todo: set connection to " + controllerName);
+            	        		if( controllerProtocol.equals("ws")) {
+            	        			controllerconn =  WsConnection.create( controllerPort, "eval",null);
+            	        		}else {
+            	        			CommUtils.outmagenta("sorry, only ws supported  "  );
+            	        		}
+            	        	}
+            	        	return;
+            			}
+            	    if( m.msgSender().equals(controllerName) ) hanleMsgFromAppl(m);
+                	//}
+                	else if( m.msgSender().equals(firstCaller)  ) hanleMsgFromPage(m);
+             });
         });        
+	}
+	
+	
+	protected void hanleMsgFromPage(IApplMessage m) {
+		if( m.msgContent().contains("cell(") ) {
+     		CommUtils.outmagenta("send cell cmd to controller " + m);
+    		//if( lifeCtrlCtx != null ) sendsafe( lifeCtrlCtx, m.toString() );
+     		sendMsgToController(m);
+		}else if( m.msgReceiver().equals("lifectrl") ) {
+			//Giro il messaggio al livello applicativo
+    		//if( lifeCtrlCtx != null )  sendsafe( lifeCtrlCtx, m.toString() );		
+			sendMsgToController(m);
+		}
+	}
+	
+	protected void sendMsgToController( IApplMessage msg ) {
+		if( lifeCtrlCtx != null ) sendsafe( lifeCtrlCtx,msg.toString() );
+		else 
+		if( controllerconn != null ) {
+ 			try {
+				controllerconn.forward( msg );
+			} catch (Exception e) {
+				CommUtils.outred("sendMsgToController ERROR: " + e.getMessage());
+			}
+		}else {
+			CommUtils.outred("ERROR: non connection to the controller");
+		}
+	}
+	
+	protected void hanleMsgFromAppl (IApplMessage m ) {
+       	if( m.msgReceiver().equals(name) && m.msgContent().startsWith("[[")) { //canvas rep
+            //CommUtils.outcyan(name + " | receives [[" + " from " + m.msgSender() + " to " + m.msgReceiver());
+//            pageCtx.send( m.msgContent()); 
+            sendToAll(  m.msgContent() );   //così aggiorno tutte le pagine e gli observer
+    		return;
+    	}
+    	if( m.msgReceiver().equals(name) && m.msgContent().contains("cell(")) {    
+       	 //Il controller remoto ha detto di modificare il colore di una cella
+	       	if (pageCtx != null) {
+	           	//Ci sono 3 arg - es. cell(5,6,1)
+	       		pageCtx.send( m.msgContent()); 
+	        }
+    	}
+		
 	}
 	
     protected void sendsafe(WsContext ctx, String msg) {
@@ -178,6 +204,10 @@ public class IoJavalin {
                 ctx.send(msg);
             }
         }
+    }
+    
+    protected void sendToAll(String m) {
+    	allConns.forEach( (conn) ->	conn.send( m ) );
     }
 	
 

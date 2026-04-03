@@ -16,6 +16,7 @@ var opened = true;
 
 var cmdMsgTemplate = "msg( eval, dispatch, SENDER, lifectrl, CMD, 0 )"
 var evMsgTemplate  = "msg( eval, event, SENDER, CMD, 0 )"
+var reqMsgTemplate = "msg( do, request,  SENDER, lifectrl, CMD, 0 )"
 
 canvas.width  = COLS * CELL_SIZE;
 canvas.height = ROWS * CELL_SIZE;
@@ -50,30 +51,24 @@ socketToGui.onclose = () => {
 };
 
 socketToGui.onmessage = (event) => {
-    if(event.data.startsWith("ID:")){
-        pageId = event.data.split(":")[1];
-        handleOwnerLogic(pageId); 
-        return;
-    }
-
-    if(event.data.startsWith("msg")){
-        const parts = event.data.split(",");
-        let content = parts[4].trim();
-
-        if(content.includes("[[")) {
-            // Sostituisce i punti e virgola con virgole e rimuove gli apici singoli
-            let validJson = content.replace(/;/g, ",").replace(/'/g, "");
-            try {
-                const grid = JSON.parse(validJson);
-                // Forza il disegno della griglia aggiornata
-                requestAnimationFrame(() => draw(grid));
-            } catch(e) {
-                console.error("Errore parsing griglia:", e);
-            }
-        }
+	//console.log("pageglobal | onmessageeeeee:",event.data);
+	if( event.data.startsWith("ID:")){
+		console.log("pageglobal | onmessage ID:",event.data);
+		pageId= event.data.split(":")[1];
+		//addItem( "page ID="  + pageId ); 
+	}
+	else if( event.data.includes("[[")) {
+		console.log("pageglobal | onmessage RICEVE [[" );
+		//if( event.data.includes("true")) 
+		//console.log(""+event.data)
+		const grid = JSON.parse(event.data);
+		requestAnimationFrame(() => draw(grid));
+	}
+	else  {
+		console.log("pageglobal |  send ", event.data );
+		sendCmdToServer(event.data);
     }
 };
-
 socketToGui.onclose =  function(event){	
  console.log("pageglobal | Chiusura connessione ", event);
     //addItem("pageglobal | Chiusura connessione eval");
@@ -84,15 +79,15 @@ socketToGui.onclose =  function(event){
 // --- DISEGNO (L'illusione visiva) ---
 function draw(grid) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let r = 0; r < grid.length; r++) {
-        for (let c = 0; c < grid[r].length; c++) {
-            ctx.strokeStyle = "#333"; // Colore del bordo
-            ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-            if (grid[r][c]) {
-                ctx.fillStyle = "#ff0000";
-                ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
-            }
-        }
+    
+	const currentRows = grid.length;
+	const currentCols = grid[0].length;
+	console.log(" " + currentRows + " " + currentCols)
+    for (let r = 0; r < currentRows; r++) {
+        for (let c = 0; c < currentCols; c++) {
+			ctx.fillStyle = grid[r][c] ? "#ff0000" : "#00ff00";
+			ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+       }
     }
 }
 
@@ -121,18 +116,11 @@ function sendAction(action) {
 function sendCmdToServer(cmd){ //la pagina invia  msg( eval, dispatch, SENDER, lifectrl, CMD, 0 )
 	console.log("sendCmdToServer:" + cmd )
 	msg = cmdMsgTemplate.replace("CMD", cmd).replace("SENDER",pageId) 
+	//msg = reqMsgTemplate.replace("CMD", cmd).replace("SENDER",pageId)
 	sendToServer( msg )		
 }
 
 function sendToServer(cmd) {
 	 console.log("sendToServer:" + cmd + " opened=" + opened)
-	 if( opened )  socketToGui.send(cmd);
-}
-
-function handleOwnerLogic(id) {
-    const buttons = document.querySelectorAll("button");
-    const isOwner = (id === "caller1");
-    buttons.forEach(btn => btn.disabled = !isOwner);
-    statusDiv.innerText = isOwner ? "STATO: CONNESSO (OWNER)" : "STATO: CONNESSO (OSSERVATORE)";
-    statusDiv.style.color = isOwner ? "#00ff00" : "#ff8800";
+	 if( opened )  socketToGui.send(msg);
 }

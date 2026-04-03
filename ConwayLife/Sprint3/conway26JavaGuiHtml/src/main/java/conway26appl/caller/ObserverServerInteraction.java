@@ -21,7 +21,7 @@ import java.net.http.HttpClient;
 import java.net.http.WebSocket;
  
 /*
- * PREMESSA: lanciare MainConwayGui
+ * PREMESSA: lanciare MainConwayGui e LifeGameInteraction
  *  
  */
 
@@ -30,7 +30,7 @@ public class ObserverServerInteraction  implements IObserver{
     public ObserverServerInteraction( ) throws Exception {
     	CommUtilsOrig.outblue("ObserverServerInteraction | STARTS Observing" );
     	Interaction wsconn = WsConnection.create("localhost:8080", "eval", this);
-    	CommUtils.delay(15000);
+    	CommUtils.delay(60000);
      }
     
      
@@ -44,6 +44,7 @@ public class ObserverServerInteraction  implements IObserver{
 
 	@Override
 	public void update(String message) {
+		if( ! message.contains("[[")) 
 		CommUtilsOrig.outgreen("ObserverServerInteraction | update elabora: " + message);
 	}
     
