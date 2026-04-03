@@ -15,8 +15,11 @@
    in Java con dispositivi Mock di I/O. <i>Distribuzione</i>: file jar. <i>Documentazione</i>: [conway26Java_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26Java_v0.html)
  * [ConwayLife Sprint2](ConwayLife/Sprint2/conway26JavaSwing): <b>evoluzione</b> del primo prototipo
    con un dispositivo di output realizzato in Swing. <i>Distribuzione</i>: file jar. <i>Documentazione</i>: [conway26JavaSwing_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26JavaSwing_v0.html)
+ * [ConwayLife Sprint3](ConwayLife/Sprint3): evoluzione del sistema in locale
+   usando una pagina HTML come dispositivo di I/O. <i>Distribuzione</i>: Docker yaml. <i>Documentazione</i>:
+   * Soluzione Esterna: [conway26JavaGuiHtml_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26JavaGuiHtml_v0.html)
+   * Soluzione Integrata: [conway26JavaGuiHtml_int_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26JavaGuiHtml_int_v0.html)
+  
  ### Sistemi come servizi
  * ...
- ### Sistema ConwayLife con pagine HTML
- * [ConwayLife Sprint3](ConwayLife/Sprint3): evoluzione del sistema in locale
-   usando una pagina HTML come dispositivo di I/O. <i>Distribuzione</i>: Docker yaml. <i>Documentazione</i>: [conway26JavaGuiHtml_v0.html](https://desypellegrini.github.io/IngegneriaSistemiSoftware2026/conway26JavaGuiHtml_v0.html)
+
