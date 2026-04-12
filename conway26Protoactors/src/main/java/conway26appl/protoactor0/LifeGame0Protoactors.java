@@ -18,7 +18,8 @@ public class LifeGame0Protoactors  {
      protected void setUpWithPactor(int port) {
     	 ProtoActorContextInterface ctx  = new ProtoActorContext26("ctx8070",port);
          LifeInterface life              = new Life( 20,20 );            //ncell in iomap.js        
-  	     new OutInGuiPattore("outdev",ctx);   //per primo !!!
+//  	     new OutInGuiPattore("outdev",ctx);   //per primo !!!
+         new LifeSidecar("lifeSidecar", ctx);
   	     new LifeController0Pattore( name,life,ctx ) ;   
     	 //No injection di OutInGuiProtoactor in  LifeControllerProtoactor
    }

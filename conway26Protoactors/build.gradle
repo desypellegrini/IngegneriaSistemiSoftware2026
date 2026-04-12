@@ -68,8 +68,7 @@ eclipse {
 
 application {
     //Define the main class for the application.
-    //mainClassName    = 'conway26appl.protoactors.LifeGameProtoactors'
-    mainClass = 'conway26appl.protoactor0.LifeGame0Protoactors'
+    mainClassName    = 'conway26appl.conway26LifeganeTcp.MainLifeGame'
 }
 
 jar {

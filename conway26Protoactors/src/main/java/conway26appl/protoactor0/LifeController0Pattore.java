@@ -27,7 +27,7 @@ public class LifeController0Pattore extends AbstractProtoactor26 {
     protected int epoch             = 0;
     protected int generationTime    = 500;
     protected  LifeInterface life   = null;
-    protected Interaction connToGui = null;
+//    protected Interaction connToGui = null;
     protected IApplMessage connectToGuiServer, displayCmd;
 	
 	public LifeController0Pattore( String name, LifeInterface game,  ProtoActorContextInterface ctx  ) {  
@@ -57,20 +57,26 @@ public class LifeController0Pattore extends AbstractProtoactor26 {
     		CommUtils.outred( name + " REJECTS " +  req.msgId() + " from " + req.msgSender()); 
     		IApplMessage reply = CommUtils.buildReply(name, "answerTo"+req.msgId(), "error(not owner)", req.msgSender());
     		return reply;
-    	}
+    	} 	
     	if( req.msgId().equals("nepoch")){            
             IApplMessage replyMsg = 
             CommUtils.buildReply(name,req.msgId(),""+ epoch,req.msgSender());
             return replyMsg;
-          }else if (req.msgContent().startsWith("cell")) {  //arriva dalla pagina HTML
-				String[] coords = req.msgContent().replace("cell(", "").replace(")","").split(",");   
-				int x = Integer.parseInt(coords[0]);
-				int y = Integer.parseInt(coords[1]);
-				switchCellState( x,y );
-		        String gridRepFroCanvas = toJson( life.getGrid().repAsBoolArray() );   
-		        IApplMessage replyMsg = CommUtils.buildReply(name,req.msgId(),gridRepFroCanvas,req.msgSender());
-		        CommUtils.outgreen(name + " | replyMsg " + replyMsg);
-		        return replyMsg;				 
+          }else if (req.msgContent().startsWith("cell") || req.msgContent().equals("clear")) {  //arriva dalla pagina HTML
+        	  if(req.msgContent().startsWith("cell")) {
+        		  String[] coords = req.msgContent().replace("cell(", "").replace(")","").split(",");   
+        		  int x = Integer.parseInt(coords[0]);
+  				  int y = Integer.parseInt(coords[1]);
+  				  switchCellState( x,y );
+        	  } else {
+        		  onClear();
+        	  }
+        	  // Rispondo inviando la griglia aggiornata
+        	  String gridRepFroCanvas = toJson( life.getGrid().repAsBoolArray() );
+        	  IApplMessage replyMsg = CommUtils.buildReply(name,req.msgId(),gridRepFroCanvas,req.msgSender());
+		      CommUtils.outgreen(name + " | replyMsg " + replyMsg);
+		      return replyMsg;
+
 		  }else if (req.msgContent().startsWith("clear")) {
 		        String gridRepFroCanvas = toJson( life.getGrid().repAsBoolArray() );   
 		        IApplMessage replyMsg = CommUtils.buildReply(name,req.msgId(),gridRepFroCanvas,req.msgSender());
@@ -125,14 +131,15 @@ public class LifeController0Pattore extends AbstractProtoactor26 {
     		return;
     	}
     	String payload = m.msgContent();
-		if (payload.startsWith("cell")) {  //arriva dalla pagina HTML
-				String[] coords = payload.replace("cell(", "").replace(")","").split(",");   
-				int x = Integer.parseInt(coords[0]);
-				int y = Integer.parseInt(coords[1]);
-				switchCellState( x,y );
-				displayGrid( );  //For canvas
-		}
-		else if (payload.equals("stop")) {
+//		if (payload.startsWith("cell")) {  //arriva dalla pagina HTML
+//				String[] coords = payload.replace("cell(", "").replace(")","").split(",");   
+//				int x = Integer.parseInt(coords[0]);
+//				int y = Integer.parseInt(coords[1]);
+//				switchCellState( x,y );
+//				displayGrid( );  //For canvas
+//		}
+//		else 
+		if (payload.equals("stop")) {
 			CommUtils.outblue(name + " | stop form " + m.msgSender()  );
 			onStop();
 		}
@@ -213,7 +220,9 @@ public class LifeController0Pattore extends AbstractProtoactor26 {
 		boolean[][] grids = getGridReAsBoolArrayp(grid,grid.getRowsNum(), grid.getColsNum()) ; //new boolean[20][20];
 		try {
 			String jsonGrid   = mapper.writeValueAsString(grids);
- 			displayCmd        = CommUtils.buildDispatch(name, "display", jsonGrid, "outdev"  );
+// 			displayCmd        = CommUtils.buildDispatch(name, "display", jsonGrid, "outdev"  );
+ 			displayCmd        = CommUtils.buildDispatch(name, "display", jsonGrid, "lifeSidecar"  );
+
 			//connToGui.forward( cmdmsg );
  			forward( displayCmd );
 		} catch (Exception e) {
