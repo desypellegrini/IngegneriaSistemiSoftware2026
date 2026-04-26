@@ -162,10 +162,10 @@ public class LifeGamePactorPolling extends AbstractProtoactor26 {
 		try {
 			inputCmd = connToServer.request(readCmd); //bloccante? Si fino a inputCmd
 			CommUtils.outmagenta(name + " taskRead inputCmd ...... " + inputCmd);
-			if (inputCmd.msgContent().startsWith("nocmd")) {
-				CommUtils.outblue(name + " elabInputCmd donothing since nocmd");
-				return false;
-			}
+//			if (inputCmd.msgContent().startsWith("nocmd")) {
+//				CommUtils.outblue(name + " elabInputCmd donothing since nocmd");
+//				return false;
+//			}
 			elabInputCmd(inputCmd);
 			return true;
 		} catch (Exception e) {

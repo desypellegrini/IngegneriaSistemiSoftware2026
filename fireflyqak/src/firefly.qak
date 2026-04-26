@@ -1,0 +1,39 @@
+System fireflysystem
+
+// Dichiarazione evento
+Event emitlight : light(V) 
+
+// Contesto
+Context ctxfirefly ip [ host= "localhost" port= 8020 ]
+
+// Dichiarazione attore firefly che appartiene al contesto creato
+QActor firefly context ctxfirefly {
+	[# 
+		var D = 500L // Variabile per  memorizzare il tempo di attesa
+		
+		// Funzione che restituisce un numero casuale tra 500 e 2000 millisecondi
+		fun getDelay() : Long {
+			return (500..2000).random().toLong()
+		}
+	#]
+	
+	// Stato iniziale dell'automa (Moore).
+	State s0 initial {
+		println("$name | start") color yellow
+	}
+	// Transizione immediata verso lo stato work
+	Goto work
+	
+	// Stato operativo in cui avviene l'azione della lucciola
+	State work {
+		// La lucciola emette l'evento
+		emit emitlight : light(on)
+		println("$name | FLASH!") color yellow
+		
+		// Calcola il prossimo intervallo casuale
+		[# D = getDelay() #]
+	}
+	// Aspetta il tempo D millisecondi e poi torna nello stato work
+    // Questo crea il loop infinito che simula il lampeggio
+	Transition t0 whenTimeVar D -> work 
+}

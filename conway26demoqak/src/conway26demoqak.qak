@@ -1,0 +1,51 @@
+System conway26demoqak
+mqttBroker "localhost" : 1883 eventTopic "lifegameIn"
+
+Event start : start(X)
+Event stop : stop(X)
+Event clear : clear(X)
+
+Context ctxgame ip [host="localhost" port=8010 ] 
+
+QActor lifegame context ctxgame{
+	State s0 initial{
+		println("$name | starting") color blue
+//		[# System.exit(0) #]
+		println("$name | ending") color blue
+	}
+	Goto work	// posso imporre un passaggio di stato
+	
+	State work{
+		println("$name | waiting for input ...") color blue
+	}
+	
+	Transition t0
+		whenEvent start -> handleEvents
+		whenEvent stop -> handleEvents
+		whenEvent clear -> handleEvents
+	
+	State handleEvents{
+		printCurrentMessage color magenta
+	}
+	
+	Goto work
+//	Transition t0
+//		whenEvent start -> handleEvents
+//		whenEvent stop -> handleEvents
+	
+}
+
+QActor inputmock context ctxgame{
+	State s0 initial{
+		println("$name | starting") color green
+		delay 1000 		//aspetta 1 secondo
+		println("$name | emitting start") color green
+		publish "lifegameIn" -m start : start(mock)
+		delay 1000 		//aspetta 1 secondo
+		println("$name | emitting stop") color green
+		publish "lifegameIn" -m stop : stop(mock)
+		delay 1000 		//aspetta 1 secondo
+		println("$name | emitting clear") color green
+		publish "lifegameIn" -m clear : clear(mock)
+	}
+}

@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>SistemaSJavalin_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>SistemaSJavalin</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+Realizzazione di un servizio in Java che fa il calcolo dei valori di un'espressione matematica con deployment del servizio in Docker usando il framework javalin.
+ 
+<h2>Requirements</h2>
+<div class="remark">
+	<ul>
+        <li>Realizzare un servizio Java che calcoli i valori dell'espressione sin(x) + cos(√3 * x).</li>
+        <li>Utilizzare il <a href='https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#subsubsection*.26'>javalin server</a> per abilitare la ricezione di messaggi via WebSocket, ma anche HTTP/1 e HTTP2. </li>
+        <li>All'utente verrà presentata una pagina html che gli permetta di specificare la x per cui si vuole ottenere il risultato e la modalità di interazione (WebSocket, Get o Post).</li>
+        <li>Il deployment dell'applicazione deve avvenire mediante Docker.</li>
+    </ul>
+
+</div>
+ 
+
+<h2>Requirement analysis</h2>
+<div class="remark">
+    La realizzazione della funzione per calcolare il risultato dell'espressione data in Java è banale.
+    <pre><code>
+    protected double eval(double x) {
+		return Math.sin(x) + Math.cos( Math.sqrt(3)*x);
+	}
+    </code></pre>
+    La complessità sta nella gestione delle richieste di diverso tipo. Sebbene javalin permetta di gestire con codice molto simile sia le connessioni WebSocket che le interazioni HTTP, le due funzionalità sono profondamente diverse: 
+    <ul>
+        <li>una WebSocket stabilisce una relazione tra il client e il server che rimane attiva fino a quando il client non chiude la connessione. Da notare che Jetty, su cui si appoggia javalin, chiude automaticamente le connessioni WS se non rileva traffico dopo un certo intervallo di tempo. Per evitare ciò si può agire sul parametro Idle Timeout del server o inviare periodicamente dei ping di heartbeat per tenere aperta la connessione</li>
+        <li>una interazione HTTP stabilisce invece una transazione che termina quando il server invia il risultato</li>
+    </ul>
+
+</div>
+
+ 
+
+<h2>Problem analysis</h2>
+<div class="remark">
+    Sono dipendente dalla tecnologia di javalin, ma cerco di organizzare il codice in maniera opportuna. 
+    Sulla base dei principi di Separation of Concerns e Clean Architecture il sistema verrà sviluppato con la seguente infrastruttura: <br>
+    <img src="./img/sistemaSJavalinSchema.png" alt="infrastruttura SistemaSJavalin" width="40%"><br>
+
+    Il sistema avrà quindi un'architettura a layer:
+    <ul>
+        <li>
+            Livello di infrastruttura: qui opera javalin, gestendo i protocolli e prelevando dai messaggi le informazioni rilevanti per il livello di dominio. 
+            In questo livello è opportuno separare (logicamente) la parte di supporto alle WebSocket e la parte di supporto ad HTTP;
+        </li>
+        <li>
+            Livello di adattamento: è il livello intermedio che trasforma i dati di basso livello forniti dall'infrastruttura nei dati richiesti dall'applicazione. 
+            Anche qui è opportuno separare le funzioni di utilità per le WebSocket da quelle per HTTP;
+        </li>
+        <li>
+            Livello di dominio: la funzione eval vista prima definisce la business logic del sistema, indipendente da javalin e protocolli vari.
+        </li>
+    </ul>
+
+    Come già detto, javalin gira sopra il Server Jetty. Poiché ogni volta che arriva un messaggio, Jetty assegna il compito di eseguire il codice dentro onMessage a un thread preso dal suo Thread Pool, se arrivano due messaggi quasi contemporaneamente vengono prelevati e sfruttati due thread distinti.
+    <br>
+    Questo significa che se ho una richiesta "lenta" dovuta ad una carico computazionale più alto (simulata con un ritardo) che arriva prima e una più veloce che arriva dopo, non sarà rispettato l'ordine di arrivo nelle risposte, ma arriverà prima la risposta veloce e poi quella lenta. 
+    E' importante tenere a mente questo comportamento, perché è in contrasto con quanto avviene normalmente nelle WS, dove ci si aspetta un'esecuzione sequenziale delle richieste ricevute.
+    <br>
+    Per la gestione delle richieste da parte dell'utente sono necessarie le <a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/AService/Sprint1/SistemaSJavalin/src/main/resources/CallerBasic.html'>funzioni Javascript</a> collegate ai pulsanti presentati all'utente che vadano ad inviare al server le richieste come specificato.<br><br>
+    Per la realizzazione del server è stato realizzato il seguente <a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/AService/Sprint1/SistemaSJavalin/src/main/java/SistemaSJavalinBetter.java'>codice</a>. 
+</div>
+ 
+
+<h2>Test plans</h2> 
+
+
+<h2>Project</h2> 
+ 
+ 
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:60%;text-align:left;color:white">
+By Desirée Pellegrini email: desiree.pellegrini@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fotodesy.jpeg" alt="emiglio" width="15%" height="15%">
+GIT repo: https://github.com/desypellegrini/IngegneriaSistemiSoftware2026.git 
+</div> 
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>conway26GuiPactorTcp_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>ConwayLife con Pattori</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+Realizzazione in Java della Gui GAME OF LIFE DI CONWAY con Pattori.<br>
+La logica del gioco è già stata analizzata nello <a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/tree/main/ConwayLife/Sprint1/conway26Java'>Sprint1</a>.
+    Utilizziamo quindi il risultato ottenuto, che costituisce un sottosistema funzionante, come punto di partenza per questo nuovo lavoro.
+    <br>
+ 
+<h2>Requirements</h2>
+<div class="remark">
+	Realizzare una variante del progetto <a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/tree/main/conway26GuiAlonePactorTcp'>conway26GuiAlonePactorTcp</a> nell'ipotesi di costruire il sistema comprensivo sia di A (Applicazione) che di S (Server/GUI) come un tutto organico, con le seguenti variazioni:
+    <ul>
+        <li>impostare i comandi cell e clear come request da S ad A</li>
+        <li>presentare, dopo la prima connessione, una pagina HTML alternativa priva di pulsanti</li>
+        <li>impostare l'adattamento di A a S attraverso un pattore locale ad A che operi come Sidecar</li>
+    </ul>
+
+</div>
+ 
+
+<h2>Requirement analysis</h2>
+<div class="remark">
+    Il comando cell fa sì che S mandi un messaggio ad A per indurlo a modificare lo stato corrente di una cella. Formalizzandolo come request (come dal primo requisito), vincoliamo in modo implicito A ad inviare una risposta. 
+    Lo stesso ragionamento può essere fatto per il comando clear, che implica che A ponga lo stato di tutte le celle a morte. Dopo questa operazione A è tenuto a rispondere al messaggio.
+    <br><br>
+    Il secondo requisito comporta lo sviluppo di una seconda pagina di output, da fornire a tutti i non-owner, che non presenterà i pulsanti START, STOP, CLEAR e EXIT. Inoltre, la pressione sulle celle non comporterà alcun comando inviato (togliamo la componente reattiva della pagina), ma la griglia dovrà essere aggiornata con l'evoluzione del gioco. 
+    Sarà compito del server tenere traccia della prima pagina che si è connessa e fornirle la pagina reattiva, dando invece la versione "ridotta" a tutti i successori.
+    <br><br>
+    Il terzo requisito parla di "pattern Sidecar".
+    Il pattern Sidecar è un modello di progettazione utilizzato nell'architettura software, in particolare negli ambienti basati su microservizi. In questo modello, un container o un processo “sidecar” viene implementato insieme al container dell'applicazione principale per estenderne o potenziarne le funzionalità.
+    <br><br>
+    Il container sidecar opera nello stesso ambiente di esecuzione dell'applicazione principale e in genere fornisce servizi di supporto quali la registrazione degli eventi, il monitoraggio, la sicurezza o la comunicazione con altri servizi. Questo modello consente al componente dell'applicazione principale di concentrarsi sulle proprie funzionalità principali, delegando al sidecar le attività secondarie (registrazione degli eventi, monitoraggio, sicurezza, individuazione dei servizi o proxy di comunicazione), favorendo così la modularità, la scalabilità e la manutenibilità nei sistemi distribuiti.
+    <br><br>
+    Questo pattern viene utilizzato per evitare che la conoscenza del protocollo usato da S "inquini" il componente A. È una concreta realizzazione del pattern logico ACL (Anti-Corruption Layer): A introduce un modulo Adapter che conosce il protocollo di S e traduce le richieste di A nel formato richiesto da S. 
+    Quindi A parlerà a messaggi col Sidecar e il Sidecar parla con il servizio. Poiché un pattore può inviare messaggi ad altri pattori che fanno parte dello stesso contesto, il Sidecar può essere un Pattore che fa parte dello stesso contesto di A.
+</div>
+ 
+
+<h2>Problem analysis</h2>
+<div class="remark">
+    Si può partire con l'analisi dalla seguente architettura logica schematizzata:
+    <br>
+    <img src="./img/conway26GuiPactorTcpSchema.png" alt="architettura conway26GuiPactorTcp" width="25%"><br>
+    I componenti, alla luce di quanto evidenziato nell'analisi dei requisiti, sono:
+    <ul>
+        <li><b>A</b>: Pattore che rappresenta l'applicazione ConwayLife (lifectrl). Contiene la logica applicativa (implementata in <a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/conway26Protoactors/src/main/java/conway26appl/protoactor0/LifeController0Pattore.java'>LifeController0Pattore.java</a>) e interagisce esclusivamente con il suo Sidecar locale attraverso il protocollo IApplMessage.</li>
+        <li><b>Sidecar</b>: Pattore locale ad A (lifeSidecar), realizzato in <a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/conway26Protoactors/src/main/java/conway26appl/protoactor0/LifeSidecar.java'>LifeSidecar.java</a>. Funge da intermediario bidirezionale: traduce lo stato della griglia per S e interpreta i comandi da S per A. Garantisce il rispetto del DIP (Dependency Inversion Principle).</li>
+        <li><b>S</b>: Pattore che rappresenta il servizio di I/O mediante Javalin (<a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/conway26GuiPactorTcp/src/main/java/conwaygui/GuiServer.java'>GuiServer.java</a>). Riceve messaggi dal Sidecar e li inoltra al Browser (B) e viceversa tramite la logica definita in 
+            <a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/conway26GuiPactorTcp/src/main/java/conway/io/IoJavalin.java'>IoJavalin.java</a>.</li>
+        <li><b>B</b>: Il web browser che visualizza la pagina (Owner o Observer). e permette l'interazione.</li>
+    </ul>
+    <i>Formalizzazione dei Messaggi</i><br><br>
+    
+    <b>A (lifectrl) invia a Sidecar</b>:
+    <ul>
+        <li>Un dispatch per l'aggiornamento della griglia: <br><pre><code>msg(display, dispatch, lifectrl, lifeSidecar, GRIDSTATE, N)</code></pre></li>
+        <li>Le reply alle richieste del server: <br><pre><code>msg(cellchanged, reply, lifectrl, lifeSidecar, cell(X,Y,done), N)</code></pre><pre><code>msg(doneclear, reply, lifectrl, lifeSidecar, GRIDSTATE, N)</code></pre></li>
+    </ul>
+
+    <b>S (GuiServer) invia a Sidecar</b>:
+    <ul>
+        <li>Richiesta di modifica cella: <br><pre><code>msg(changecell, request, GuiServer, lifectrl, cell(X,Y), N)</code></pre></li>
+        <li>Richiesta di reset (clear): <br><pre><code>msg(cmdclear, request, GuiServer, lifectrl, clear, N)</code></pre></li>
+        <li>Dispatch di controllo: <br><pre><code>msg(cmd, dispatch, GuiServer, lifectrl, CMD, N)</code></pre> (CMD = start | stop | exit)</li>
+    </ul>
+
+    <b>Interazione con il Browser (B)</b>:
+    <ul>
+        <li>S invia a B: Messaggi stringa (tramite WebSocket) con il nome della pagina (per gestire Owner/Observer) e lo stato della griglia JSON.</li>
+        <li>B invia a S: Dispatch per i pulsanti (start, stop, exit) e Request per i comandi che richiedono conferma (clear, cell) nel formato: <br><pre><code>msg(changecell, request, caller1, GuiServer, cell(X,Y), N)</code></pre></li>
+    </ul>
+    
+    Il GuiServer ha il compito di "girare" questi messaggi dal browser verso l'applicazione A, agendo da ponte tecnologico.
+    
+</div>
+ 
+
+<h2>Test plans</h2> 
+
+
+<h2>Project</h2> 
+ 
+ 
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:60%;text-align:left;color:white">
+By Desirée Pellegrini email: desiree.pellegrini@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fotodesy.jpeg" alt="emiglio" width="15%" height="15%">
+GIT repo: https://github.com/desypellegrini/IngegneriaSistemiSoftware2026.git 
+</div> 
+</body>
+</html>

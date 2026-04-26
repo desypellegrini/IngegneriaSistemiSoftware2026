@@ -27,7 +27,7 @@ public class LifeController0Pattore extends AbstractProtoactor26 {
     protected int epoch             = 0;
     protected int generationTime    = 500;
     protected  LifeInterface life   = null;
-//    protected Interaction connToGui = null;
+    protected Interaction connToGui = null;
     protected IApplMessage connectToGuiServer, displayCmd;
 	
 	public LifeController0Pattore( String name, LifeInterface game,  ProtoActorContextInterface ctx  ) {  
@@ -57,7 +57,7 @@ public class LifeController0Pattore extends AbstractProtoactor26 {
     		CommUtils.outred( name + " REJECTS " +  req.msgId() + " from " + req.msgSender()); 
     		IApplMessage reply = CommUtils.buildReply(name, "answerTo"+req.msgId(), "error(not owner)", req.msgSender());
     		return reply;
-    	} 	
+    	}
     	if( req.msgId().equals("nepoch")){            
             IApplMessage replyMsg = 
             CommUtils.buildReply(name,req.msgId(),""+ epoch,req.msgSender());
@@ -71,12 +71,11 @@ public class LifeController0Pattore extends AbstractProtoactor26 {
         	  } else {
         		  onClear();
         	  }
-        	  // Rispondo inviando la griglia aggiornata
-        	  String gridRepFroCanvas = toJson( life.getGrid().repAsBoolArray() );
-        	  IApplMessage replyMsg = CommUtils.buildReply(name,req.msgId(),gridRepFroCanvas,req.msgSender());
-		      CommUtils.outgreen(name + " | replyMsg " + replyMsg);
-		      return replyMsg;
-
+        	// Rispondo inviando la griglia aggiornata
+		        String gridRepFroCanvas = toJson( life.getGrid().repAsBoolArray() );   
+		        IApplMessage replyMsg = CommUtils.buildReply(name,req.msgId(),gridRepFroCanvas,req.msgSender());
+		        CommUtils.outgreen(name + " | replyMsg " + replyMsg);
+		        return replyMsg;				 
 		  }else if (req.msgContent().startsWith("clear")) {
 		        String gridRepFroCanvas = toJson( life.getGrid().repAsBoolArray() );   
 		        IApplMessage replyMsg = CommUtils.buildReply(name,req.msgId(),gridRepFroCanvas,req.msgSender());

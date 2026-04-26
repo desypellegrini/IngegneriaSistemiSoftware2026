@@ -150,7 +150,7 @@ public class LifeGamePactorUsingMqtt extends AbstractProtoactor26 {
 	
 	protected void switchCellState(int x, int y) { // synchronized??
 		ICell c = life.getCell(x, y);
-		c.switchCellState();
+		c.switchCellState(); 
 	}
 
 	protected String toJson(boolean[][] gridrep) {
@@ -208,6 +208,7 @@ public class LifeGamePactorUsingMqtt extends AbstractProtoactor26 {
 	protected void displayGrid() {
 		// CommUtils.outcyan( name + " | displayGrid");
 		displayGrid(life.getGrid());
+	
 	}
 
 	protected void displayGrid(IGrid grid) {
