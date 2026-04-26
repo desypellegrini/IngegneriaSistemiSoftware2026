@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>fireflyqak_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>fireflyqak</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+Definire un modello qak di un sistema firefly che simula il comportamento di una lucciola.
+ 
+<h2>Requirements</h2>
+<div class="remark">
+	Il sistema deve soddisfare i seguenti requisiti:
+    <ul>
+        <li>
+            modellare un'entità che simuli il comportamento di una lucciola, che deve emettere luce in maniera autonoma (comportamento proattivo)
+        </li>
+        <li>
+            l'emissione di luce deve avvenire a intervalli temporali casuali (ad esempio 2 o 3 volte al secondo, o con frequenza minore) per simulare un comportamento naturale
+        </li>
+        <li>
+            il sistema deve essere predisposto per visualizzare lo stato della lucciola su una griglia di visualizzazione (la stessa utilizzata nei precedenti lavori su ConwayLife)
+        </li>
+        <li>
+            la modellazione deve avvenire tramite il linguaggio qak
+        </li>
+    </ul>
+
+</div>
+ 
+
+<h2>Requirement analysis</h2>
+<div class="remark">
+    Per soddisfare il requisito di emissione luce, utilizzo un Event (emitlight). 
+            A differenza di un Dispatch, l'evento non ha un destinatario esplicito, permettendo un disaccoppiamento totale tra la lucciola e i potenziali osservatori (come la griglia di visualizzazione), rispettando il principio di incapsulamento.<br>
+        La lucciola non deve reagire a comandi esterni per lampeggiare. Nel modello qak, questo viene espresso tramite una transizione temporizzata (whenTimeVar). 
+            L'attore rimane in uno stato di attesa per un tempo variabile prima di tornare autonomamente allo stato di lavoro.<br>
+            Poiché il metamodello qak è deterministico, la logica per generare intervalli casuali è stata delegata a una funzione di supporto in linguaggio Kotlin inserita nel preambolo dell'attore. 
+</div>
+
+ 
+
+<h2>Problem analysis</h2>
+<div class="remark">
+         Il sistema è composto da un singolo contesto ctxfirefly che ospita l'attore firefly. 
+            L'uso di un contesto separato permette di isolare l'entità logica in vista di una futura distribuzione su nodi diversi.<br>
+           La lucciola è modellata come una Moore State Machine. 
+            Nello stato work, l'attore esegue l'azione di emissione (Output) e calcola il prossimo intervallo. 
+            La transizione verso se stesso tramite whenTimeVar garantisce la continuità del comportamento senza l'uso di cicli bloccanti.<br>
+         L'evento emitlight trasporta un payload simbolico (light(on)). 
+            In una fase successiva, questo payload potrà essere arricchito con informazioni sulla posizione (X,Y) o sull'intensità, per permettere alla griglia di discriminare diverse lucciole.<br>
+           L'implementazione è disponibile nel file: <a href='https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/fireflyqak/src/firefly.qak'>firefly.qak</a>
+        
+</div>
+ 
+
+<h2>Test plans</h2> 
+
+
+<h2>Project</h2> 
+ 
+ 
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:60%;text-align:left;color:white">
+By Desirée Pellegrini email: desiree.pellegrini@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fotodesy.jpeg" alt="emiglio" width="15%" height="15%">
+GIT repo: https://github.com/desypellegrini/IngegneriaSistemiSoftware2026.git 
+</div> 
+</body>
+</html>
