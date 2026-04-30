@@ -21,11 +21,11 @@ evattr = {
     'color': 'darkgreen',
     'style': 'dotted'
 }
-with Diagram('fireflysystemArch', show=False, outformat='png', graph_attr=graphattr) as diag:
+with Diagram('griddisplayArch', show=False, outformat='png', graph_attr=graphattr) as diag:
   with Cluster('env'):
      sys = Custom('','./qakicons/system.png')
 ### see https://renenyffenegger.ch/notes/tools/Graphviz/attributes/label/HTML-like/index
-     with Cluster('ctxfirefly', graph_attr=nodeattr):
-          firefly=Custom('firefly','./qakicons/symActorWithobjSmall.png')
-     firefly >> Edge( label='emitlight', **eventedgeattr, decorate='true', fontcolor='red') >> sys
+     with Cluster('ctxgrid', graph_attr=nodeattr):
+          griddisplay=Custom('griddisplay','./qakicons/symActorWithobjSmall.png')
+     sys >> Edge( label='cellstate', **evattr, decorate='true', fontcolor='darkgreen') >> griddisplay
 diag

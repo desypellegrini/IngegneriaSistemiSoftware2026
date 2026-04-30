@@ -1,39 +1,57 @@
-System fireflysystem
+System fireflyqak
 
-// Dichiarazione evento
-Event emitlight : light(V) 
+Dispatch cellstate : cellstate(X,Y,COLOR) "set color of cell X,Y"
 
 // Contesto
-Context ctxfirefly ip [ host= "localhost" port= 8020 ]
+Context ctxfirefly ip [ host= "localhost" port= 8040 ]
+Context ctxgrid ip [host="127.0.0.1" port=8050 ]
+
+ExternalQActor griddisplay context ctxgrid
 
 // Dichiarazione attore firefly che appartiene al contesto creato
-QActor firefly context ctxfirefly {
+QActor firefly1 context ctxfirefly {
 	[# 
-		var D = 500L // Variabile per  memorizzare il tempo di attesa
-		
-		// Funzione che restituisce un numero casuale tra 500 e 2000 millisecondi
-		fun getDelay() : Long {
-			return (500..2000).random().toLong()
-		}
+		var X = 10
+		var Y = 10
 	#]
 	
 	// Stato iniziale dell'automa (Moore).
 	State s0 initial {
-		println("$name | start") color yellow
+		printCurrentMessage color yellow
 	}
-	// Transizione immediata verso lo stato work
-	Goto work
+	Goto flash
 	
-	// Stato operativo in cui avviene l'azione della lucciola
-	State work {
-		// La lucciola emette l'evento
-		emit emitlight : light(on)
-		println("$name | FLASH!") color yellow
-		
-		// Calcola il prossimo intervallo casuale
-		[# D = getDelay() #]
+	State flash{
+		printCurrentMessage color yellow
+		[# var Timer = java.util.Random().nextLong(500L,1000L ) #]
+		delayVar Timer
+		//TurnoOn
+//		println("$name | turnOn $Timer") color magenta
+		forward griddisplay -m cellstate : cellstate($X,$Y,1)
+		delayVar Timer
+		//TurnoOff
+//		println("$name | turnOff $Timer") color cyan
+		forward griddisplay -m cellstate : cellstate($X,$Y,0)
 	}
-	// Aspetta il tempo D millisecondi e poi torna nello stato work
-    // Questo crea il loop infinito che simula il lampeggio
-	Transition t0 whenTimeVar D -> work 
+	
+	Goto flash
+	
+	//Questo è il modello che scaturisce dall'analisi del problema
+	
 }
+
+//attore griddisplaymock che simula accensione e spegnimento
+//devo capire se il messaggio è dispatch, request o event. è dispatch
+//QActor griddisplaymock context ctxfirefly {
+//	State s0 initial {
+//		printCurrentMessage color green
+//	}
+//	
+//	Transition t0 whenMsg cellstate -> display
+//		
+//	State display {
+//		printCurrentMessage color magenta
+//	}
+//	
+//	Transition t0 whenMsg cellstate -> display
+//}

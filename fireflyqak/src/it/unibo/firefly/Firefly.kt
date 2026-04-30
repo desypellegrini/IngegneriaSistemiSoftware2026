@@ -20,7 +20,7 @@ import org.json.simple.JSONObject
 
 //User imports JAN2024
 
-class Firefly ( name: String, scope: CoroutineScope, isconfined: Boolean=false, isdynamic: Boolean=false ) : 
+class Firefly ( name: String, scope: CoroutineScope, isconfined: Boolean=false, isdynamic: Boolean=true ) : 
           ActorBasicFsm( name, scope, confined=isconfined, dynamically=isdynamic ){
 
 	override fun getInitialState() : String{
@@ -30,36 +30,42 @@ class Firefly ( name: String, scope: CoroutineScope, isconfined: Boolean=false, 
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
 		 
-				var D = 500L // Variabile per  memorizzare il tempo di attesa
-				
-				// Funzione che restituisce un numero casuale tra 500 e 2000 millisecondi
-				fun getDelay() : Long {
-					return (500..2000).random().toLong()
-				}
+			   var  X          = 0
+			   var  Y          = 0
+			   var Timer       = 500L 
+			   
+			    fun setCellCoords( )  {
+		     		val coords = name.replace("firefly_","").split("_")   
+		     		X  = coords[0].toInt()
+		     		Y  = coords[1].toInt()        
+		  		}		
 		return { //this:ActionBasciFsm
 				state("s0") { //this:State
 					action { //it:State
-						CommUtils.outyellow("$name | start")
+						 Timer = java.util.Random().nextLong(1000L,2000L )   
+						 setCellCoords( )                                    
+						CommUtils.outmagenta("$name | X=$X Y=$Y  Timer=$Timer")
+						 logger.info(  "$name  created $X,$Y "  )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition( edgeName="goto",targetState="work", cond=doswitch() )
+					 transition( edgeName="goto",targetState="flash", cond=doswitch() )
 				}	 
-				state("work") { //this:State
+				state("flash") { //this:State
 					action { //it:State
-						emit("emitlight", "light(on)" ) 
-						CommUtils.outyellow("$name | FLASH!")
-						 D = getDelay()  
+						forward("cellstate", "cellstate($X,$Y,1)" ,"griddisplay" ) 
+						delay(500) 
+						forward("cellstate", "cellstate($X,$Y,0)" ,"griddisplay" ) 
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
-				 	 		stateTimer = TimerActor("timer_work", 
-				 	 					  scope, context!!, "local_tout_"+name+"_work", D )  //OCT2023
+				 	 		stateTimer = TimerActor("timer_flash", 
+				 	 					  scope, context!!, "local_tout_"+name+"_flash", Timer )  //OCT2023
 					}	 	 
-					 transition(edgeName="t00",targetState="work",cond=whenTimeout("local_tout_"+name+"_work"))   
+					 transition(edgeName="t00",targetState="flash",cond=whenTimeout("local_tout_"+name+"_flash"))   
 				}	 
 			}
 		}

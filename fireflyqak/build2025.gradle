@@ -162,9 +162,9 @@ task dovesiamo {
 
 distributions {
     main {
-        distributionBaseName = 'fireflysystem'
+        distributionBaseName = 'firefly'
         contents { 
-             from './fireflysystem.pl'
+             from './firefly.pl'
              from './sysRules.pl'
         }
     }

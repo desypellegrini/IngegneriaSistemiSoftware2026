@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>fireflysynch_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>fireflysynch</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+Costruire il simulatore di un sistema costituito da 3 lucciole.
+ 
+<h2>Requirements</h2>
+<div class="remark">
+     Inizialemente, le lucciole lampeggiamo ciascuna con una frequenza (costante) propria.
+     <ul>
+        A. Dopo 10 secondi le lucciole devono lampeggiare in modo sincronizzato.
+     </ul>
+
+</div>
+ 
+
+<h2>Requirement analysis</h2>
+<div class="remark">
+    Qual è la natura delle entità coinvolte e quali sono le modalità della loro interazione?<br>
+    Ogni <b>lucciola</b> è un'entità modellata come un componente software autonomo dotato di un proprio flusso di controllo. 
+    Il modo migliore per esprimere la lucciola in software è come <b>attore</b>. <br>
+    Il lampeggiamento iniziale a frequenza propria costante implica che l'attore non attende messaggi esterni per agire. 
+    Il passaggio da un comportamento autonomo a uno sincronizzato richiede una transizione di stato del sistema. Sono state valutate diverse strategie in termini di <b>costi e benefici</b> (<i>strategia aziendale</i>):
+            <ol>
+                <li>Uso di un orchestratore che impone una nuova frequenza.</li>
+                <li>Uso di un orchestratore che emette impulsi di sincronizzazione costanti  cui obbediscono tutte le lucciole.</li>
+                <li>Passaggio autonomo a una frequenza comune predefinita dopo un tempo fissato.</li>
+                <li>Sincronizzazione distribuita basata sull'osservazione dei vicini (coreografia).</li>
+            </ol>
+
+    Per questo prototipo si è scelta la <b>strategia 3</b> (passaggio a una frequenza comune guidata da un evento), in quanto garantisce il minor costo di realizzazione.<br>
+    L'interazione tra l'entità che decide la sincronizzazione e le lucciole è modellata tramite un <b>evento</b> (<i>sync</i>). Questo permette a un numero arbitrario di lucciole di percepire il segnale senza che l'emittente ne conosca l'identità.
+
+</div>
+
+
+ 
+
+<h2>Problem analysis</h2>
+<div class="remark">
+    Per modellare le 3 lucciole si utilizza un attore creator che istanzia le entità come dynamicOnly. <br>
+    Si assegna a ogni lucciola un valore di timer casuale calcolato all'avvio nello stato s0 tramite funzioni Kotlin. 
+    Dunque all'inizio le lucciole operano in modo asincrono e indipendente.<br>
+    L'uso della transizione whenEvent sync permette alla lucciola di interrompere il proprio ciclo di attesa proattivo per aggiornare il parametro interno Timer.<br>
+    L'attore creator assume il ruolo di orchestratore. Dopo un delay di 10 secondi emette l'evento di sincronizzazione. <br>
+    Per verificare visivamente il comportamento si è fatto un refactoring della vista proiettando le 3 lucciole sulle prime tre celle della riga 0 della griglia già utilizzata.
+</div>
+ 
+
+<h2>Test plans</h2> 
+
+
+<h2>Project</h2> 
+<div class="remark">
+    Il sistema è composto da due contesti che interagiscono via rete:
+            <ul>
+                <li><i>ctxfirefly</i> (porta 8040) ospita la logica della simulazione.</li>
+                <li><i>ctxgrid</i> (porta 8050) ospita il visualizzatore esterno.</li>
+            </ul>
+
+    L'orchestratore (creator) gestisce il ciclo di vita del sistema:
+            <ul>
+                <li>instanzia dinamicamente le 3 lucciole tramite la primitiva <i>create</i></li>
+                <li>implementa la logica di coordinamento temporale, emettendo l'evento <i>sync(1000)</i> dopo 10 secondi di esecuzione</li>
+            </ul>
+
+    Attore Firefly:
+            <ul>
+                <li><i>Fase 1 (Autonoma)</i>: ogni istanza usa un timer casuale (500-2000ms) per il lampeggio indipendente.</li>
+                <li><i>Fase 2 (Sincronizzata)</i>: reagisce all'evento sync aggiornando il proprio stato interno con la frequenza comune ricevuta.</li>
+                <li><i>Interazione</i>: invia messaggi di tipo Dispatch (cellstate) al componente griddisplay per l'aggiornamento della GUI.</li>
+            </ul>
+    Riferimenti al Codice: <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/fireflyqak/src/fireflysynch.qak">fireflysynch.qak</a>.
+         
+</div>
+ 
+ 
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+<div class="remark">
+    Il sistema richiede:
+    <ol>
+        <li>attivazione del contesto <i>ctxgrid</i> per inizializzare il server Javalin e la GUI.</li>
+        <li>esecuzione del contesto <i>ctxfirefly</i> per avviare l'orchestratore e la creazione delle lucciole.</li>
+    </ol>
+</div>
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:60%;text-align:left;color:white">
+By Desirée Pellegrini email: desiree.pellegrini@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fotodesy.jpeg" alt="emiglio" width="15%" height="15%">
+GIT repo: https://github.com/desypellegrini/IngegneriaSistemiSoftware2026.git 
+</div> 
+</body>
+</html>
