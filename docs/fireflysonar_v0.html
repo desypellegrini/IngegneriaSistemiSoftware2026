@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>fireflysonar_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>fireflysonar</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+Costruire il simulatore di un sistema costituito da 3 lucciole.<br>
+Questo progetto è l'evoluzione del sistema <a href="fireflysynch_v0.html">fireflysynch</a>.
+ 
+<h2>Requirements</h2>
+<div class="remark">
+    Inizialmente, le lucciole lampeggiamo ciascuna con una frequenza (costante) propria.
+     <ul>
+        B. Il sistema è dotato anche di un sonar. Quando il sonar rileva un ostacolo a una distanza minore di una distanza prefissata DMIN, le lucciole devoono lampeggiare in modo sincronizzato. Quando la distanza dell’ostacolo (ri)supera DMIN, le lucciole tornano a lampeggiare in modo random.
+     </ul>
+
+</div>
+ 
+
+<h2>Requirement analysis</h2>
+<div class="remark">
+	Il sonar è un'entità indipendente che osserva il mondo fisico. <br>Nel modello qak è espresso come un <b>QActor</b> (<i>sonarmock</i>) che emette eventi di distanza (<i>sonardata</i>).<br>
+    Chi interpreta i dati del sonar? Si è scelto di introdurre un <b>Controller</b> dedicato che agisce come un orchestratore. Questa separazione dei compiti evita di appesantire l'attore sonar con logiche di business che non gli competono.<br><br>
+    Il sistema deve oscillare tra due stati:
+            <ol>
+                <li><b>stato di allarme (D < DMIN)</b>: il controller emette un evento <i>sync</i> per imporre il parametro.</li>
+                <li><b>stato normale (D >= DMIN)</b>: il controller emette un evento <i>desync</i> per ripristinare l'autonomia delle lucciole.</li>
+            </ol>
+
+</div> 
+
+<h2>Problem analysis</h2>
+<div class="remark">
+    L'attore <i>sonarmock</i> emette periodicamente eventi <i>sonardata</i> per riflettere lo stato dell'ambiente.<br>
+    Il <i>controller</i> introduce un punto di decisione centralizzato che confronta la distanza ricevuta con la soglia DMIN. Questo permette di cambiare la politica di allarme in un unico punto del codice senza modificare le lucciole.<br><br>
+    Ogni lucciola memorizza la propria frequenza random in una variabile locale <i>MyFreq</i> durante lo stato iniziale <i>s0</i>. Questo permette di ripristinare il comportamento proattivo originale dopo la ricezione dell'evento <i>desync</i>.<br>
+    La lucciola deve essere in grado di reagire al sonar anche mentre sta aspettando il proprio tempo di lampeggio. L'uso di <i>whenTimeVar Timer</i> combinato con <i>whenEvent sync/desync</i> permette un'interruzione immediata dell'attesa al variare delle condizioni ambientali.<br>
+
+</div>
+ 
+
+<h2>Test plans</h2> 
+
+
+<h2>Project</h2> 
+<div class="remark">
+	Il progetto realizza un'architettura distribuita composta da tre tipologie di attori, ognuno con una responsabilità definita:
+    <ul>
+        <li>
+            <ul>
+                <li><i>ctxfirefly</i>: nodo principale che ospita la logica di simulazione (porta 8040).</li>
+                <li><i>ctxgrid</i>: nodo esterno per la visualizzazione dello stato delle celle (porta 8050).</li>
+            </ul>
+        </li>
+        <li> 
+            Il <i>sonarmock</i> emette dati; il <i>controller</i> funge da <b>orchestratore</b>, trasformando le letture di distanza in comandi di sistema (<i>sync</i>/<i>desync</i>) basati sulla soglia DMIN.
+        </li>
+        <li>
+            Per quanto riguarda l'attore <b>Firefly</b>, la transizione principale utilizza <i>whenTimeVar Timer</i> per il lampeggio proattivo, ma rimane in ascolto degli eventi globali emessi dal controller per variare il proprio parametro temporale.
+        </li>
+        <li>
+            Il codice completo della logica sonar è disponibile nel file <a href="https://github.com/desypellegrini/IngegneriaSistemiSoftware2026/blob/main/fireflysonar/src/fireflysonar.qak">fireflysonar.qak</a>.
+        </li>
+    </ul>
+
+</div> 
+ 
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:60%;text-align:left;color:white">
+By Desirée Pellegrini email: desiree.pellegrini@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fotodesy.jpeg" alt="emiglio" width="15%" height="15%">
+GIT repo: https://github.com/desypellegrini/IngegneriaSistemiSoftware2026.git 
+</div> 
+</body>
+</html>

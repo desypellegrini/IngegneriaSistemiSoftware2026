@@ -31,5 +31,6 @@
 
  * [fireflyqak](fireflyqak)
  * [fireflysynch](fireflysynch)
+ * [fireflysonar](fireflysonar)
 
 

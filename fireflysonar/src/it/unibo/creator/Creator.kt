@@ -40,18 +40,6 @@ class Creator ( name: String, scope: CoroutineScope, isconfined: Boolean=false, 
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition( edgeName="goto",targetState="waitToSync", cond=doswitch() )
-				}	 
-				state("waitToSync") { //this:State
-					action { //it:State
-						delay(10000) 
-						emit("sync", "sync(1000)" ) 
-						CommUtils.outblue("$name | Inviato segnale di sincronizzazione")
-						//genTimer( actor, state )
-					}
-					//After Lenzi Aug2002
-					sysaction { //it:State
-					}	 	 
 				}	 
 			}
 		}

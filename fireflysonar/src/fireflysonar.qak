@@ -1,0 +1,126 @@
+System fireflysonar
+
+Dispatch cellstate : cellstate(X,Y,COLOR)
+Event sync : sync(T)          // allarme che sincronizza sulla frequenza T
+Event desync : desync(N)      // torna random
+Event sonardata : sonar(D)    // dati simulati dal sonar
+
+Context ctxfirefly ip [ host="localhost" port=8040 ] 
+Context ctxgrid ip [ host="127.0.0.1" port=8050 ]
+
+ExternalQActor griddisplay context ctxgrid
+
+QActor creator context ctxfirefly {
+    State s0 initial {
+        create firefly _"0"
+        create firefly _"1" 
+        create firefly _"2"
+    }
+}
+
+// l'attore sonar emette solo i dati di distanza
+QActor sonarmock context ctxfirefly {
+    [# 
+    	var Dist = 0 
+    #]
+    
+    State s0 initial {
+        println("$name | ready!") color green
+    }
+    Goto simulate
+    
+    State simulate {
+        [# 
+        	Dist = java.util.Random().nextInt(100) 
+        #]
+        emit sonardata : sonar($Dist)
+        println("$name | emetto distanza $Dist")
+        delay 3000
+    }
+    Goto simulate
+}
+
+// riceve i dati del sonar e decide lo stato del sistema
+QActor controller context ctxfirefly {
+    [# 
+    	var DMIN = 50 
+    #]
+    
+    State s0 initial {
+    	
+    }
+    
+    Transition t0 
+    	whenEvent sonardata -> check
+    
+    State check {
+        onMsg(sonardata : sonar(D)) {
+            [# 
+            	var D = payloadArg(0).toInt() 
+            #]
+            if [# D < DMIN #] {
+                // forza la sincronizzazione
+                emit sync : sync(1000)
+                println("$name | ostacolo vicino ($D)! Sincronizzo") color magenta
+            } else {
+                // torna al comportamento random
+                emit desync : desync(0)
+                println("$name | ostacolo lontano ($D). Disincronizzo.") color cyan
+            }
+        }
+    }
+    Goto s0
+}
+
+
+QActor firefly context ctxfirefly dynamicOnly {
+    [# 
+        var X = 0; 
+        var Y = 0; 
+        var Timer = 500L; 
+        var MyFreq = 0L 
+    #]
+    
+    State s0 initial {
+        [# 
+            X = 0; 
+            Y = name.replace("firefly_","").toInt()
+            MyFreq = java.util.Random().nextLong(500, 2000)
+            Timer = MyFreq
+        #]
+        println("$name | pronto con frequenza $MyFreq")
+    }
+    Goto flash
+
+    State flash {
+        forward griddisplay -m cellstate : cellstate($X,$Y,1)
+        delay 300
+        forward griddisplay -m cellstate : cellstate($X,$Y,0)
+    }
+    // la lucciola aspetta il suo Timer o reagisce ai cambi di stato del sistema
+    Transition t0 
+    		whenTimeVar Timer -> flash
+            whenEvent sync -> handleSync
+            whenEvent desync -> handleDesync
+
+    State handleSync {
+        onMsg(sync : sync(T)) { 
+        	[# 
+        		Timer = payloadArg(0).toLong() 
+        	#]
+        }
+        println("$name | sincronizzata a $Timer") color yellow
+    }
+    Goto flash
+
+// ripristina la sua frequenza originale
+    State handleDesync { 
+        [# 
+        	Timer = MyFreq 
+        #] 
+        println("$name | tornata a frequenza random $Timer") color blue
+    }
+    Goto flash
+}
+
+
