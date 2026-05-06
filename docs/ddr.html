@@ -44,12 +44,12 @@ Quando il Radar rileva un 'intruso' a una distanza minore di una distanza prefis
     L'analisi definisce formalmente i componenti e i comportamenti citati nei requisiti:
     <ul>
         <li>DDR (Differential Drive Robot): entità mobile caratterizzata da due ruote motrici indipendenti. Lo modello come un Actor in quanto possiede un comportamento autonomo e proattivo. Le sue proprietà fondamentali sono la capacità di traslare (avanti/indietro) e ruotare sul proprio asse.</li>
-        <li>Radar: dispositivo di input che produce dati sulla distanza di un intruso. Da requisito non è specificata una comunicazione diretta tra Radar e DDR; le due entità sono logicamente distinte.</li>
+        <li>Radar: dispositivo di input che produce dati sulla distanza di un intruso.</li>
         <li>Stanza: spazio rettangolare vuoto, i cui confini definiscono la traiettoria che il robot deve seguire.</li>
         <li>HOME: locazione di partenza e di arrivo. Viene modellata come una variabile di stato che permette al robot di riconoscere la conclusione.</li>
         <li>DMIN: valore soglia prefissato che determina il cambiamento dello stato operativo del robot.</li>
     </ul>
-    Sulla base di queste definizioni, si delinea il modello formale qak iniziale. Il DDR è modellato come attore:
+    Sulla base di queste definizioni, si delinea il modello formale qak iniziale. Il DDR è modellato come <a href="https://anatali.github.io/issLab2026/_static/docs/Protobook.pdf#section.17.1">attore</a>:
     <pre><code>System ddr_perimeter
 Context ctxddr ip [ host="localhost" port=8040 ]
 
