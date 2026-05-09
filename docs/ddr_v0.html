@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="css/mystyle.css">
+<!--
+    <script type="text/javascript" src="../css/issStyle.js"></script>
+-->
+    
+</head>
+   
+<title>ddr_v0</title></head>
+    
+
+<body>
+<div id="top">
+<h1>Differential Drive Robot (DDR)</h1>
+</div>  
+
+<div class="body">  
+
+<h2>Introduction</h2>
+Costruire un sistema software che comanda un <a href="https://anatali.github.io/issLab2026/LectureBologna2026.html">Differential Drive Robot (DDR)</a>.
+ 
+<h2>Requirements</h2>
+<div class="remark">
+	Costruire un sistema software che comanda un Differential Drive Robot (DDR) in modo che, partendo dalla posizione iniziale HOME, il robot si sposti lungo il perimetro di una stanza rettangolare vuota. <br>
+    Il DDR si deve fermare quando tornato in HOME.<br><br>
+
+Il DDR è anche sensibile ai dati rilevati da un Radar.<br>
+Quando il Radar rileva un 'intruso' a una distanza minore di una distanza prefissata ``DMIN``:
+  <ul>
+    <li>se il DDR si sta muovendo, il DDR si ferma fino a che il Radar non rileva più un 'intruso' così vicino </li>
+    <li>se il DDR è fermo in HOME, il DDR ruota su sè stesso fino a che un 'intruso' così vicino scompare</li>
+  </ul>
+
+</div>
+ 
+
+ 
+
+<h2>Requirement analysis</h2>
+<div class="remark">
+    Il sistema software è composto dalle seguenti entità e proprietà:<br><br>
+    <ul>
+        <li>la <b>Stanza</b> e <b>HOME</b><br>
+            Per formalizzare la stanza, la modello come un rettangolo in un piano euclideo di dimensioni <i>B</i> (base) e <i>H</i> (altezza). Per rendere il modello indipendente dalle unità di misura fisiche e più vicino alla logica di movimento, introduco l'unità di misura "<b>unità robotica</b>" (R).<br>
+            <ul>
+                <li>Stanza: formalizzata tramite le variabili <i>B</i> (larghezza), <i>H</i> (altezza) e <i>R</i> (lato del robot).</li>
+                <li>HOME: rappresenta la cella di partenza e arrivo del percorso. Viene modellata come una variabile di stato (coppia di coordinate (x, y)) all'interno di una griglia che rappresenta la stanza.</li>
+            </ul>
+            Si formalizza la struttura della stanza con il seguente codice Kotlin:
+            <pre><code>data class Stanza(val B: Int, val H: Int, val R: Double) {
+val home: Posizione = Posizione(0, 0)
+}
+
+data class Posizione(val x: Int, val y: Int)</code></pre>        
+        </li>
+        <li>Il <b>Radar</b><br>
+            Il Radar è un'entità di input che rileva un intruso a una distanza D. Dal punto di vista della modellazione, il Radar deve rendere disponibile questa informazione al sistema.<br> Esistono due modi per formalizzare questa interazione (modello dell'analista):
+            <ol>
+                <li>modello a eventi: il Radar emette periodicamente un segnale asincrono.
+<pre><code>Event radar : distance(D) // D in metri</code></pre></li>
+                <li>modello a richiesta: il sistema interroga il Radar quando necessario.
+<pre><code>Request getDistance : getDistance(D)
+Reply distance : distance(D) for getDistance</code></pre></li>
+            </ol>
+        </li>
+        <li><b>DDR Robot</b> e <b>Mind</b><br>
+            Dall'analisi emerge una distinzione fondamentale tra il corpo e la mente del sistema:<br>
+            <ul>
+                <li>DDR Robot: è l'attuatore fisico. In questa fase lo considero un'entità puramente reattiva che risponde a comandi (avanti, ruota, stop). Non possiede logica decisionale propria.</li>
+                <li>Mind (Business Logic): è l'attore proattivo che contiene la logica per percorrere il perimetro e gestire le interruzioni del Radar.</li>
+
+            </ul>
+        </li>
+
+    </ul>
+    Sulla base di quanto analizzato sopra, si formalizza la struttura del sistema con il seguente modello QAK iniziale:
+    <pre><code>System ddr_perimeter_system
+
+Event radar : distance(D) // modello a eventi per il radar
+Dispatch move : move(CMD) // CMD = forward, backward, rotate, stop
+
+Context ctxddr ip [ host="localhost" port=8040 ]
+
+// Il Radar emette dati sulla distanza
+QActor radar context ctxddr {
+    State s0 initial { }
+}
+
+// Il DDR agisce come attuatore 
+QActor ddr context ctxddr {
+    State s0 initial { }
+}
+
+// La "Mente" contiene la logica del perimetro e la gestione DMIN
+QActor mind context ctxddr {
+    [# var DMIN = 0.5 #]
+    State s0 initial { }
+}</code></pre>
+
+
+</div>
+
+
+ 
+
+<h2>Problem analysis</h2>
+ 
+
+<h2>Test plans</h2> 
+
+
+<h2>Project</h2> 
+ 
+ 
+
+<h2>Testing</h2> 
+ 
+
+<h2>Deployment</h2> 
+
+ 
+<h2>Maintenance</h2> 
+ 
+<!-- USEFUL
+<table style="width:100%" border="1">
+<tr>
+<td style="width:50%">
+</td>
+<td></td>
+</tr>
+</table>
+-->
+	      	
+<br/><br/> 	
+</div>  
+
+<div style="background-color:rgba(86, 56, 253, 0.9); width:60%;text-align:left;color:white">
+By Desirée Pellegrini email: desiree.pellegrini@studio.unibo.it, 
+<!-- <img src="./img/mbot-S.jpg" alt="mbot" width="15%" height="15%"> -->
+<img src="./img/fotodesy.jpeg" alt="emiglio" width="15%" height="15%">
+GIT repo: https://github.com/desypellegrini/IngegneriaSistemiSoftware2026.git 
+</div> 
+</body>
+</html>

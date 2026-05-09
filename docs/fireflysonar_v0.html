@@ -35,22 +35,69 @@ Questo progetto è l'evoluzione del sistema <a href="fireflysynch_v0.html">firef
 
 <h2>Requirement analysis</h2>
 <div class="remark">
-	Il sonar è un'entità indipendente che osserva il mondo fisico. <br>Nel modello qak è espresso come un <b>QActor</b> (<i>sonarmock</i>) che emette eventi di distanza (<i>sonardata</i>).<br>
-    Chi interpreta i dati del sonar? Si è scelto di introdurre un <b>Controller</b> dedicato che agisce come un orchestratore. Questa separazione dei compiti evita di appesantire l'attore sonar con logiche di business che non gli competono.<br><br>
-    Il sistema deve oscillare tra due stati:
+    Il sistema software è composto dalle seguenti entità e proprietà:
+    <ul>
+        <li><b>Lucciola</b>: entità capace di lampeggiare ciclicamente (accensione/spegnimento). Inizialmente opera con un ritmo proattivo autonomo caratterizzato da una frequenza costante propria. Viene modellata come un Actor in quanto possiede un comportamento interno e autonomo (brillamento).
+        </li>
+        <li><b>Sonar</b>: dispositivo di input incaricato di rilevare la distanza <b>D</b> di un ostacolo. L'informazione deve essere resa disponibile al sistema per coordinare il comportamento delle lucciole. <br>
+            Esistono due modelli formali per questa interazione (prospettiva dell'analista):
             <ol>
-                <li><b>stato di allarme (D < DMIN)</b>: il controller emette un evento <i>sync</i> per imporre il parametro.</li>
-                <li><b>stato normale (D >= DMIN)</b>: il controller emette un evento <i>desync</i> per ripristinare l'autonomia delle lucciole.</li>
+                <li>modello a eventi: il Sonar emette periodicamente un segnale asincrono.
+                    <pre><code>Event sonardata : sonar(D)</code></pre>
+                </li>
+                <li>modello a richiesta: il sistema interroga il Sonar quando necessario.
+                    <pre><code>Request getDistance : getDistance(D)</code></pre>
+                </li>
             </ol>
+        </li>
+        <li><b>DMIN</b>: valore soglia prefissato che determina il passaggio tra il comportamento proattivo (random) e quello reattivo (sincronizzato).
+        </li>
+        <li><b>Stati del sistema</b>:
+            <ul>
+                <li>Modalità Random: ogni lucciola opera indipendentemente con il proprio timer locale.</li>
+                <li>Modalità Sincronizzata: stato attivato quando <i>D < DMIN</i>, in cui tutte le lucciole adottano un periodo di lampeggio uniforme.</li>
+            </ul>
+        </li>
+    </ul>
+
+    Sulla base di quanto analizzato sopra, si formalizza la struttura del sistema con il seguente modello QAK iniziale:
+
+<pre><code>System fireflysonar
+
+// messaggi e segnali identificati dal dominio
+Dispatch cellstate : cellstate(X,Y,COLOR)
+Event sync : sync(T)          // allarme che sincronizza sulla frequenza T
+Event desync : desync(N)      // torna random
+Event sonardata : sonar(D)    // dati simulati dal sonar
+
+Context ctxfirefly ip [ host="localhost" port=8040 ] 
+
+// La Lucciola è un Actor con comportamento proprio
+QActor firefly context ctxfirefly { 
+    State s0 initial { } 
+}
+
+// Il Sonar è l'entità di input ambientale
+QActor sonarmock context ctxfirefly { 
+    State s0 initial { } 
+}
+</code></pre>
 
 </div> 
 
 <h2>Problem analysis</h2>
 <div class="remark">
     L'attore <i>sonarmock</i> emette periodicamente eventi <i>sonardata</i> per riflettere lo stato dell'ambiente.<br>
-    Il <i>controller</i> introduce un punto di decisione centralizzato che confronta la distanza ricevuta con la soglia DMIN. Questo permette di cambiare la politica di allarme in un unico punto del codice senza modificare le lucciole.<br><br>
+    Dall'analisi dei requisiti emerge che Sonar e Lucciola sono entità disaccoppiate. Scelgo di introdurre un <b>Controller</b> dedicato che agisce come mente del sistema. In questo modo, il <i>sonarmock</i> produce dati, mentre il <i>controller</i> gestisce la business logic (confronto con DMIN ed emissione dei comandi di stato).<br><br>
+    Sono state valutate diverse opzioni per imporre il ritmo comune:
+            <ol>
+                <li>Uso di un orchestratore che impone una nuova frequenza tramite messaggi diretti (meno scalabile).</li>
+                <li>Sincronizzazione distribuita basata sull'osservazione (coreografia, più complessa).</li>
+                <li><b>Emissione di eventi broadcast (scelta)</b>: l'uso di <i>emit sync/desync</i> permette a un numero arbitrario di lucciole di percepire il cambio di stato senza che il Controller debba conoscerne l'identità.</li>
+            </ol>
+            <br>
     Ogni lucciola memorizza la propria frequenza random in una variabile locale <i>MyFreq</i> durante lo stato iniziale <i>s0</i>. Questo permette di ripristinare il comportamento proattivo originale dopo la ricezione dell'evento <i>desync</i>.<br>
-    La lucciola deve essere in grado di reagire al sonar anche mentre sta aspettando il proprio tempo di lampeggio. L'uso di <i>whenTimeVar Timer</i> combinato con <i>whenEvent sync/desync</i> permette un'interruzione immediata dell'attesa al variare delle condizioni ambientali.<br>
+    La lucciola deve reagire al sonar anche mentre sta aspettando il momento di lampeggiare. L'uso della primitiva <i>whenTimeVar Timer</i> combinata con <i>whenEvent sync/desync</i> permette di interrompere immediatamente il <i>delay</i> al variare delle condizioni ambientali.<br>
 
 </div>
  
@@ -86,6 +133,13 @@ Questo progetto è l'evoluzione del sistema <a href="fireflysynch_v0.html">firef
  
 
 <h2>Deployment</h2> 
+<div class="remark">
+    Il sistema richiede:
+    <ol>
+        <li>attivazione del contesto <i>ctxgrid</i> per inizializzare il server Javalin e la GUI.</li>
+        <li>esecuzione del contesto <i>ctxfirefly</i> per attivare l'attore creator, avviare il sonarmock e attivare il controller.</li>
+    </ol>
+</div>
 
  
 <h2>Maintenance</h2> 
