@@ -29,131 +29,43 @@ class Firefly ( name: String, scope: CoroutineScope, isconfined: Boolean=false, 
 	override fun getBody() : (ActorBasicFsm.() -> Unit){
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
-		
-			   //var MyState     = false
+		 
 			   var  X          = 0
 			   var  Y          = 0
-		 	   var RowsN       = 0
-		 	   var ColsN       = 0
-		 	   var NumNeigh    = 0 
-		
 			   var Timer       = 500L 
-			   var Allended    = false
-		 
-		   	   var NflashFinal = 0 
-		
-		
-		 fun setCellCoords( )  {
-		     val coords = name.replace("firefly_","").split("_")   
-		     X = coords[0].toInt()
-		     Y  = coords[1].toInt()        
-		  }
-		 
-		
-		   fun genNeighborsNames( x: Int, y: Int): String? {
-		        var outS : String
-		        val nb   = java.lang.StringBuilder()
-		        for (i in -1..1) {
-		            for (j in -1..1) {
-		                if ( (i == 0) and (j == 0) ) continue
-		                val x1 = x + i
-		                val y1 = y + j
-		                if (x1 >= 0 && x1 < RowsN && y1 >= 0 && y1 < ColsN) {
-		                    val firefly = ",_" + x1 + "_" + y1
-		                    nb.append(firefly)
-		                }
-		            }
-		        }
-		        outS = nb.toString().replaceFirst(",".toRegex(), "")         
-		        return "$outS"     
-		    }
-		 
-		 
-		     fun subscribeToNeighbors(  x:Int, y:Int ) : Int{
-		       var Countnb = 0
-		
-		       val nblist = genNeighborsNames( x, y )!!.split(",")     
-		       val nblistiter  = nblist.iterator()
-		       while( nblistiter.hasNext() ){
-		           Countnb++
-		           val next = nblistiter.next().toString()
-		           CommUtils.outblack("$name subscribes to  firefly$next")
-		           subscribeTo( name, "firefly$next" )   
-		       }
-		       return Countnb
-		   }       
+			   
+			    fun setCellCoords( )  {
+		     		val coords = name.replace("firefly_","").split("_")   
+		     		X  = coords[0].toInt()
+		     		Y  = coords[1].toInt()        
+		  		}		
 		return { //this:ActionBasciFsm
 				state("s0") { //this:State
 					action { //it:State
-						   setCellCoords( )		 
-						CommUtils.outblue("$name STARTS | ${firefly.FFNum.ncellstart} Timer=$Timer $RowsN $ColsN")
-						//genTimer( actor, state )
-					}
-					//After Lenzi Aug2002
-					sysaction { //it:State
-					}	 	 
-					 transition(edgeName="t00",targetState="configure",cond=whenEvent("start"))
-				}	 
-				state("configure") { //this:State
-					action { //it:State
 						 Timer = java.util.Random().nextLong(1000L,2000L )   
-						if( checkMsgContent( Term.createTerm("start(RowsN,ColsN)"), Term.createTerm("start(RN,CN)"), 
-						                        currentMsg.msgContent()) ) { //set msgArgList
-								 RowsN = payloadArg(0).toInt() 
-								    		   ColsN = payloadArg(1).toInt()
-								    		   NumNeigh = subscribeToNeighbors( X,Y )
-						}
-						CommUtils.outcyan("$name | configure $RowsN $ColsN $NumNeigh")
-						forward("cellstate", "cellstate($X,$Y,0)" ,"griddisplay" ) 
+						 setCellCoords( )                                    
+						CommUtils.outmagenta("$name | X=$X Y=$Y  Timer=$Timer")
+						 logger.info(  "$name  created $X,$Y "  )  
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
 					}	 	 
-					 transition( edgeName="goto",targetState="working", cond=doswitch() )
-				}	 
-				state("working") { //this:State
-					action { //it:State
-						//genTimer( actor, state )
-					}
-					//After Lenzi Aug2002
-					sysaction { //it:State
-				 	 		stateTimer = TimerActor("timer_working", 
-				 	 					  scope, context!!, "local_tout_"+name+"_working", Timer )  //OCT2023
-					}	 	 
-					 transition(edgeName="t01",targetState="flash",cond=whenTimeout("local_tout_"+name+"_working"))   
-					transition(edgeName="t02",targetState="elabFlashlamp",cond=whenEvent("flashlamp"))
+					 transition( edgeName="goto",targetState="flash", cond=doswitch() )
 				}	 
 				state("flash") { //this:State
 					action { //it:State
 						forward("cellstate", "cellstate($X,$Y,1)" ,"griddisplay" ) 
 						delay(500) 
 						forward("cellstate", "cellstate($X,$Y,0)" ,"griddisplay" ) 
-						emitLocalStreamEvent("flashlamp", "flashlamp($MyName,$Timer)" ) 
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002
 					sysaction { //it:State
+				 	 		stateTimer = TimerActor("timer_flash", 
+				 	 					  scope, context!!, "local_tout_"+name+"_flash", Timer )  //OCT2023
 					}	 	 
-					 transition( edgeName="goto",targetState="working", cond=doswitch() )
-				}	 
-				state("elabFlashlamp") { //this:State
-					action { //it:State
-						if( checkMsgContent( Term.createTerm("flashlamp(NAME,TIME)"), Term.createTerm("flashlamp(X,Y)"), 
-						                        currentMsg.msgContent()) ) { //set msgArgList
-								 var TimerOther = payloadArg(1).toLong()    
-								 var DeltaT     = Timer - TimerOther  
-								if(  DeltaT > 0  
-								 ){CommUtils.outred("$name | ${currentMsg.msgSender()} faster $TimerOther}")
-								 Timer = TimerOther  
-								}
-						}
-						//genTimer( actor, state )
-					}
-					//After Lenzi Aug2002
-					sysaction { //it:State
-					}	 	 
-					 transition( edgeName="goto",targetState="working", cond=doswitch() )
+					 transition(edgeName="t00",targetState="flash",cond=whenTimeout("local_tout_"+name+"_flash"))   
 				}	 
 			}
 		}

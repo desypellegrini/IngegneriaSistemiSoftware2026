@@ -27,7 +27,4 @@ with Diagram('sistemasqakArch', show=False, outformat='png', graph_attr=graphatt
 ### see https://renenyffenegger.ch/notes/tools/Graphviz/attributes/label/HTML-like/index
      with Cluster('ctxsistemas', graph_attr=nodeattr):
           sistemas=Custom('sistemas','./qakicons/symActorWithobjSmall.png')
-          callermock=Custom('callermock','./qakicons/symActorWithobjSmall.png')
-     callermock >> Edge(color='magenta', style='solid', decorate='true', label='<evalr<font color="darkgreen"> evalreply</font> &nbsp; >',  fontcolor='magenta') >> sistemas
-     callermock >> Edge(color='blue', style='solid',  decorate='true', label='<eval &nbsp; >',  fontcolor='blue') >> sistemas
 diag

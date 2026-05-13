@@ -19,10 +19,6 @@ import org.json.simple.JSONObject
 
 
 //User imports JAN2024
-import org.json.simple.*
-import java.io.File
-import java.io.FileWriter
-import java.util.*
 
 class Creator ( name: String, scope: CoroutineScope, isconfined: Boolean=false, isdynamic: Boolean=false ) : 
           ActorBasicFsm( name, scope, confined=isconfined, dynamically=isdynamic ){
@@ -33,46 +29,19 @@ class Creator ( name: String, scope: CoroutineScope, isconfined: Boolean=false, 
 	override fun getBody() : (ActorBasicFsm.() -> Unit){
 		//val interruptedStateTransitions = mutableListOf<Transition>()
 		//IF actor.withobj !== null val actor.withobj.name� = actor.withobj.method�ENDIF
-		 
-		 	var RowsN = 0
-		 	var ColsN = 0
-			
-			fun readGridConfig(fName: String) : Vector<Int>{
-		        val outV = Vector<Int>()
-		        val jsonParser = JSONParser()
-		        val config     = File("${fName}").readText(Charsets.UTF_8)
-		        //CommUtils.outred("${fName}   $config")
-		        val jsonObject = jsonParser.parse(config) as JSONObject
-		        val Rows  = jsonObject.get("rowsNum").toString().toInt()
-		        val Cols  = jsonObject.get("colsNum").toString().toInt()
-		        val CellSize = jsonObject.get("cellsize").toString().toInt()
-		        outV.add( Rows )
-		        outV.add( Cols )
-		        outV.add( CellSize )
-		        CommUtils.outyellow("GridSupport | readGridConfig RowsN=$RowsN, ColsN=$ColsN, CellSize=$CellSize")
-		        return outV
-		    }
 		return { //this:ActionBasciFsm
 				state("s0") { //this:State
 					action { //it:State
-						 
-								val res   = readGridConfig("gridConfig.json")
-								RowsN     = res.get(0)
-								ColsN     = res.get(1)
-						CommUtils.outcyan("$name | RowsN=$RowsN ColsN=$ColsN")
-						 
-						    	for( i in 0..RowsN-1 ){
-						    		for( j in 0..ColsN-1 ){
-						    			CommUtils.outcyan("$name | CREATES cell_${i}_${j}")  
-						    			createActorDynamically( "firefly", "_${i}_${j}", false)
-						    		}
-						    	}
-						CommUtils.outmagenta("$name | ALL Firefly crrated $RowsN, $ColsN")
-						delay(1000) 
-						emitlocal("start", "start($RowsN,$ColsN)" ) 
-						CommUtils.outmagenta("$name | ENDS")
-						//terminate(0)
-						context!!.removeInternalActor(myself)
+						   
+								 clearlog("./logs/app_actorgrid.log") 	//vedi src/main/resources/logback.xml
+						delay(500) 
+						
+							    	for( i in 0..19 ){
+							    		for( j in 0..19 ){
+							    			CommUtils.outcyan("$name | CREATES firefly_${i}_${j}")  
+							    			createActorDynamically( "firefly", "_${i}_${j}", false)
+							    		}
+							    	}		 
 						//genTimer( actor, state )
 					}
 					//After Lenzi Aug2002

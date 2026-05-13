@@ -44,60 +44,88 @@ Quando il Radar rileva un 'intruso' a una distanza minore di una distanza prefis
     Il sistema software è composto dalle seguenti entità e proprietà:<br><br>
     <ul>
         <li>la <b>Stanza</b> e <b>HOME</b><br>
-            Per formalizzare la stanza, la modello come un rettangolo in un piano euclideo di dimensioni <i>B</i> (base) e <i>H</i> (altezza). Per rendere il modello indipendente dalle unità di misura fisiche e più vicino alla logica di movimento, introduco l'unità di misura "<b>unità robotica</b>" (R).<br>
+            Per formalizzare la stanza, la modello come un rettangolo in un piano euclideo di dimensioni <i>B</i> (base) e <i>H</i> (altezza). Tuttavia poiché il robot non è un punto ma occupa un'area fisica (che assumiamo quadrata di lato R), è utile rappresentare la stanza come una griglia di celle. Introduco quindi l'unità di misura "<b>unità robotica</b>" (corrispondente al lato R), che rende il modello indipendente dalle unità fisiche e più vicino alla logica di movimento del software.<br>
+
             <ul>
-                <li>Stanza: formalizzata tramite le variabili <i>B</i> (larghezza), <i>H</i> (altezza) e <i>R</i> (lato del robot).</li>
-                <li>HOME: rappresenta la cella di partenza e arrivo del percorso. Viene modellata come una variabile di stato (coppia di coordinate (x, y)) all'interno di una griglia che rappresenta la stanza.</li>
+                <li>Stanza: formalizzata tramite le variabili <i>B</i> (numero di celle su x), <i>H</i> (numero di celle su y) e <i>R</i> (dimensione della cella in metri).</li>
+                <li>HOME: rappresenta la cella di partenza e arrivo del percorso. Viene modellata come una cella specifica (variabile di stato con coordinate x, y) all'interno della griglia.</li>
             </ul>
-            Si formalizza la struttura della stanza con il seguente codice Kotlin:
-            <pre><code>data class Stanza(val B: Int, val H: Int, val R: Double) {
-val home: Posizione = Posizione(0, 0)
+            Si formalizza la struttura con il seguente codice Kotlin:
+    <pre><code>data class Stanza(val B: Int, val H: Int, val R: Double) {
+    // Posizione HOME: cella (0, 0)
+    val home: Posizione = Posizione(0, 0)
+    
+    // Dimensioni fisiche in metri  
+    val larghezzaMetri: Double get() = B * R
+    val altezzaMetri: Double get() = H * R
 }
 
-data class Posizione(val x: Int, val y: Int)</code></pre>        
+data class Posizione(val x: Int, val y: Int)</code></pre>
+                   
         </li>
         <li>Il <b>Radar</b><br>
-            Il Radar è un'entità di input che rileva un intruso a una distanza D. Dal punto di vista della modellazione, il Radar deve rendere disponibile questa informazione al sistema.<br> Esistono due modi per formalizzare questa interazione (modello dell'analista):
+            Il Radar è un'entità di input (che modello come <b>attore</b>) incaricata di monitorare l'ambiente e rilevare un intruso a una distanza D. La sua proprietà fondamentale è rendere disponibile questa informazione al sistema. 
+    In fase di analisi dei requisiti, formalizziamo due possibili modelli di interazione:
+    
             <ol>
-                <li>modello a eventi: il Radar emette periodicamente un segnale asincrono.
-<pre><code>Event radar : distance(D) // D in metri</code></pre></li>
-                <li>modello a richiesta: il sistema interroga il Radar quando necessario.
-<pre><code>Request getDistance : getDistance(D)
-Reply distance : distance(D) for getDistance</code></pre></li>
+                <li>modello a eventi: il Radar agisce in modo autonomo, emettendo periodicamente un segnale asincrono. Questa soluzione è indicata se non conosciamo a priori chi utilizzerà l'informazione.
+<pre><code>// MODELLO ANALISTA (EVENT)
+Event sonardata : distance(D)
+QActor radar context ctxddr {
+    State s0 initial { }
+    Goto rileva
+    State rileva {
+        // rileva distanza D
+        emit sonardata : distance(D)
+        delay 1000
+    }
+    Goto rileva
+}</code></pre></li>
+                <li>modello a richiesta: il Radar comunica la distanza solo in risposta a una sollecitazione esplicita del sistema. Questo garantisce che il dato venga scambiato solo quando necessario.
+<pre><code>// MODELLO ANALISTA (REQUEST)
+Request getDistance : getDistance(D)
+Reply distance : distance(D) for getDistance
+QActor radar context ctxddr {
+    State s0 initial { }
+    Transition t0 whenRequest getDistance -> handleRequest
+    State handleRequest {
+        replyTo getDistance with distance : distance(D)
+    }
+    Goto s0
+}</code></pre></li>
             </ol>
         </li>
         <li><b>DDR Robot</b> e <b>Mind</b><br>
             Dall'analisi emerge una distinzione fondamentale tra il corpo e la mente del sistema:<br>
             <ul>
-                <li>DDR Robot: è l'attuatore fisico. In questa fase lo considero un'entità puramente reattiva che risponde a comandi (avanti, ruota, stop). Non possiede logica decisionale propria.</li>
-                <li>Mind (Business Logic): è l'attore proattivo che contiene la logica per percorrere il perimetro e gestire le interruzioni del Radar.</li>
+                <li>DDR Robot (corpo): è un'entità puramente reattiva e priva di autonomia decisionale. Rappresenta l'attuatore di comandi fornito dal committente (già esistente come codice). Le sue capacità sono limitate all'esecuzione di movimenti elementari (avanti, ruota, stop) su richiesta di entità esterne.</li>
+                <li>Mind (mente): è il componente software proattivo che implementa la business logic. È l'unico attore del sistema che conosce l'obiettivo (percorrere il perimetro) e deve coordinare il DDR in base agli stimoli del Radar. </li>
 
             </ul>
         </li>
 
     </ul>
-    Sulla base di quanto analizzato sopra, si formalizza la struttura del sistema con il seguente modello QAK iniziale:
-    <pre><code>System ddr_perimeter_system
-
-Event radar : distance(D) // modello a eventi per il radar
-Dispatch move : move(CMD) // CMD = forward, backward, rotate, stop
-
-Context ctxddr ip [ host="localhost" port=8040 ]
-
-// Il Radar emette dati sulla distanza
-QActor radar context ctxddr {
-    State s0 initial { }
-}
-
-// Il DDR agisce come attuatore 
-QActor ddr context ctxddr {
-    State s0 initial { }
-}
-
-// La "Mente" contiene la logica del perimetro e la gestione DMIN
+    Per formalizzare il comportamento della Mind e la sua reattività agli eventi ambientali, si delinea il seguente modello dell'analista:
+    
+<pre><code>// MODELLO ANALISTA PER LA BUSINESS LOGIC
 QActor mind context ctxddr {
-    [# var DMIN = 0.5 #]
-    State s0 initial { }
+    [# var DMIN = 0.5 #] // soglia definita nei requisiti
+    
+    State s0 initial {
+        // logica proattiva: comando del DDR per il perimetro
+    }
+    Transition t0 
+        whenEvent sonardata -> handleRadar
+        
+    State handleRadar {
+        onMsg( sonardata : distance(D) ) {
+            // Se D < DMIN:
+            // 1. Stop se il DDR è in movimento lungo il perimetro
+            // 2. Rotazione se il DDR è fermo in HOME
+            // 3. Attesa fino a D > DMIN per il ripristino
+        }
+    }
+    Goto s0 // Ritorno allo stato interrotto
 }</code></pre>
 
 </div>
